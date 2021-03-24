@@ -1,11 +1,13 @@
-﻿// MathPhysLab2.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
-//
-
-#include <iostream>
+﻿#include <iostream>
+#include "NonLinearBVP.h"
 
 int main()
 {
-    std::cout << "Hello World!\n";
+   NonLinearBVP nl = NonLinearBVP();
+
+   nl.ReadFormGrid("regions.txt");
+
+   int asd = 1111;
 }
 
 // Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
