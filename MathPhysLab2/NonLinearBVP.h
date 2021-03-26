@@ -10,16 +10,32 @@ using namespace std;
 class NonLinearBVP
 {
 public:
-   vector<Region> regions;             // Регионы расчетной области
+   vector<Region> regions;    // Регионы расчетной области
 
-   int n_regions = 0;                  // Количество регионов
-   int n_nodes = 0;                    // Общее количество узлов
+   int regions_count = 0;         // Количество регионов
+   int nodes_count = 0;           // Общее количество узлов
+   int elems_count = 0;           // Общее количество конечных элементов
 
-   SLAE* slae;                         // Система
-   Test test;                          // Тестовая информация
+   SLAE slae;                // СЛАУ
+   Test test;                 // Тестовая информация
+
+   // Вспомогательные матрицы для построения матриц 
+   // жесткости и массы конечного элемента
+   vector<vector<int>> G, C;
 
    NonLinearBVP()
    {
+      G = {
+         {7, -8, 1},
+         {-8, 16, -8},
+         {1, -8, 7}
+      };
+
+      C = {
+         {4, 2, -1},
+         {2, 16, 2},
+         {-1, 2, 4}
+      };
 
    }
 
@@ -29,12 +45,12 @@ public:
    {
       ifstream fin(file_name);
 
-      fin >> n_regions;
+      fin >> regions_count;
       string s;
 
-      regions.resize(n_regions);
+      regions.resize(regions_count);
 
-      for(int reg_i = 0; reg_i < n_regions; reg_i++)
+      for(int reg_i = 0; reg_i < regions_count; reg_i++)
       {
          fin >> s;
          Region* r = &regions[reg_i];
@@ -51,8 +67,8 @@ public:
 
          fin >> q >> n;
 
-         r->count = n + 1;
-         r->nodes.resize(r->count);
+         r->nodes_count = n + 1;
+         r->nodes.resize(r->nodes_count);
 
          h = right - left;
 
@@ -71,8 +87,43 @@ public:
          fin >> r->right_bord;
 
          if(reg_i > 0)
-            r->first_i = regions[reg_i - 1].count;
+            r->first_i = regions[reg_i - 1].nodes_count;
+
+         nodes_count += r->nodes_count;
+
+         r->elems_count = r->nodes_count / 2;
+
+         elems_count += r->elems_count;
       }
       fin.close();
+   }
+
+   // Функция формирования портрета глобальной матрицы
+   void FormPortrait()
+   {
+      slae.bot_tr.resize(elems_count * 3);
+      slae.top_tr.resize(elems_count * 3);
+      slae.size = elems_count * 2 + 1;
+      slae.di.resize(slae.size);
+      slae.ind.resize(slae.size + 1);
+
+      slae.ind[0] = 0;
+      slae.ind[1] = 0;
+      slae.ind[2] = 1;
+      slae.ind[slae.size] = slae.top_tr.size();
+
+      int global_i = 3;
+
+      for(int elem_i = 1; elem_i < elems_count; elem_i++, global_i += 2)
+      {
+         slae.ind[global_i] = (elem_i) * 3;
+         slae.ind[global_i + 1] = slae.ind[global_i] + 1;
+      }
+   }
+
+   // Функция заполнения матрицы системы
+   void FillMatrix()
+   {
+
    }
 };
