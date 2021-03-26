@@ -10,6 +10,8 @@ public:
    vector<double> bot_tr;     // Нижний треугольник матрицы системы
    vector<double> top_tr;     // Верхний треугольник матрицы системы
    vector<double> di;         // Диагональ матрицы системы
+   vector<double> b;          // Вектор правой части
+
    vector<int> ind;           // Указатели начала строк
 
    int size;                  // Размер матрицы системы
@@ -32,7 +34,7 @@ public:
    }
 
    // Алгоритм прямого прохода
-   void ForwardSolver(vector<double>& res)
+   void ForwardSolver()
    {
       for(int i = 0; i < size; i++)
       {
@@ -41,24 +43,24 @@ public:
          double s = 0;
 
          for(int j = i - (i1 - i0), k = i0; j < i; j++, k++)
-            s += res[j] * bot_tr[k];
+            s += b[j] * bot_tr[k];
 
-         res[i] = (res[i] - s) / di[i];
+         b[i] = (b[i] - s) / di[i];
       }
    }
 
    // Алгоритм обратного прохода
-   void BackwardSolver(vector<double>& res)
+   void BackwardSolver()
    {
       for(int i = size - 1; i >= 0; i--)
       {
          int i0 = ind[i + 0], i1 = ind[i + 1];
 
-         double xi = res[i];
+         double xi = b[i];
          for(int j = i - (i1 - i0), k = i0; j < i; j++, k++)
-            res[j] -= xi * top_tr[k];
+            b[j] -= xi * top_tr[k];
 
-         res[i] = xi;
+         b[i] = xi;
       }
    }
 

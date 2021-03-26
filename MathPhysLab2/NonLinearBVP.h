@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <fstream>
+#include <iomanip>
 #include "Region.h"
 #include "SLAE.h"
 #include "Test.h"
@@ -12,11 +13,13 @@ class NonLinearBVP
 public:
    vector<Region> regions;    // Регионы расчетной области
 
-   int regions_count = 0;         // Количество регионов
-   int nodes_count = 0;           // Общее количество узлов
-   int elems_count = 0;           // Общее количество конечных элементов
+   int regions_count = 0;     // Количество регионов
+   int nodes_count = 0;       // Общее количество узлов
+   int elems_count = 0;       // Общее количество конечных элементов
 
-   SLAE slae;                // СЛАУ
+   double big_num = 1E+20;        // Большое число для учета первого краевого условия
+
+   SLAE slae;                 // СЛАУ
    Test test;                 // Тестовая информация
 
    // Вспомогательные матрицы для построения матриц 
@@ -105,6 +108,7 @@ public:
       slae.top_tr.resize(elems_count * 3);
       slae.size = elems_count * 2 + 1;
       slae.di.resize(slae.size);
+      slae.b.resize(slae.size);
       slae.ind.resize(slae.size + 1);
 
       slae.ind[0] = 0;
@@ -124,6 +128,116 @@ public:
    // Функция заполнения матрицы системы
    void FillMatrix()
    {
+      // Индекс очередного элемента в треугольнике матрицы
+      int to_add_i_tr = 0;
+      // Индекс очередного элемента на диагонали матрицы
+      int to_add_i_di = 0;
 
+      for(int reg_i = 0; reg_i < regions_count; reg_i++)
+      {
+         Region* r = &regions[reg_i];
+
+         for(int elem_i = 0; elem_i < r->elems_count; elem_i++)
+         {
+            // Индекс первого узла элемента
+            int elem_beg_i = elem_i * 2;
+
+            // Координаты узлов
+            double x0 = r->nodes[elem_beg_i];
+            double x1 = r->nodes[elem_beg_i + 1];
+            double x2 = r->nodes[elem_beg_i + 2];
+
+            double h = x2 - x0;
+
+            // Индекс первого узла элемента в глобальной нумерации
+            //int elem_beg_i = elem_i * 2 + r->first_i;
+
+            // Заполнение диагонали матрицы
+            slae.di[to_add_i_di++] += test.lambda() / (3.0 * h) * G[0][0] + test.gamma() * h / 30.0 * C[0][0];
+            slae.di[to_add_i_di++] += test.lambda() / (3.0 * h) * G[1][1] + test.gamma() * h / 30.0 * C[1][1];
+            slae.di[to_add_i_di  ] += test.lambda() / (3.0 * h) * G[2][2] + test.gamma() * h / 30.0 * C[2][2];
+
+            // Заполнение нижнего треугольника матрицы
+            slae.bot_tr[to_add_i_tr++] += test.lambda() / (3.0 * h) * G[1][0] + test.gamma() * h / 30.0 * C[1][0];
+            slae.bot_tr[to_add_i_tr++] += test.lambda() / (3.0 * h) * G[2][0] + test.gamma() * h / 30.0 * C[2][0];
+            slae.bot_tr[to_add_i_tr++] += test.lambda() / (3.0 * h) * G[2][1] + test.gamma() * h / 30.0 * C[2][1];
+
+            // Заполнение вектора правой части
+            slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * test.f(x0) + C[0][1] * test.f(x1) + C[0][2] * test.f(x2));
+            slae.b[to_add_i_di - 1] += h / 30.0 * (C[1][0] * test.f(x0) + C[1][1] * test.f(x1) + C[1][2] * test.f(x2));
+            slae.b[to_add_i_di - 0] += h / 30.0 * (C[2][0] * test.f(x0) + C[2][1] * test.f(x1) + C[2][2] * test.f(x2));
+         }
+
+      }
+
+      slae.top_tr = slae.bot_tr;
+   }
+
+   // Функция учета краевых условий
+   void AccountBound()
+   {
+      // Индекс очередного элемента на диагонали матрицы
+      int to_add_i_di = 0;
+
+      for(int reg_i = 0; reg_i < regions_count; reg_i++)
+      {
+         Region* r = &regions[reg_i];
+
+         if(r->left_bord == 1)
+         {
+            slae.di[r->first_i] = big_num;
+            slae.b[r->first_i] = big_num * test.u(r->nodes[0]);
+
+         }
+
+         if(r->right_bord == 1)
+         {
+            slae.di[r->first_i + r->nodes_count - 1] = big_num;
+            slae.b[r->first_i + r->nodes_count - 1] = big_num * test.u(r->nodes[r->nodes_count - 1]);
+         }
+      }
+   }
+
+   // Вывод решения в файл FILE_NAME
+   void PrintSolution(const string& file_name)
+   {
+      ofstream fout(file_name);
+      double norm = 0., norm_u = 0.;
+
+      fout << "   x              calc           prec      dif            N  location" << endl << fixed;
+
+      for(int reg_i = 0; reg_i < regions_count; reg_i++)
+      {
+         Region* r = &regions[reg_i];
+
+         for(int node_i = 0; node_i < r->nodes_count; node_i++)
+         {
+            // Индекс узла в глобальной нумерации
+            int elem_beg_i = node_i + r->first_i;
+
+            fout << setw(11) << r->nodes[node_i];
+            double t = slae.b[node_i];
+            fout << setw(15) << t;
+            double tt = test.u(r->nodes[node_i]);
+            fout << setw(15) << tt;
+            fout << setw(14) << scientific << abs(t - tt) << fixed << endl;
+
+            /*if(i < N_X - 1 && i > 0 &&
+               j < y_bord && j > 0 ||
+               i < x_bord && i > 0 &&
+               j < N_Y - 1 && j > 0)
+               fout << "  inner";
+            else if(i <= x_bord || j <= y_bord)
+               fout << "  border";
+            else
+               fout << "  outer";*/
+
+            norm_u += tt * tt;
+            norm += abs(t - tt) * abs(t - tt);
+         }
+      }
+      fout << "||u-u*||/||u*|| = " << scientific << sqrt(norm) / sqrt(norm_u) << endl;
+      fout << "||u-u*|| = " << scientific << sqrt(norm);
+      fout.close();
    }
 };

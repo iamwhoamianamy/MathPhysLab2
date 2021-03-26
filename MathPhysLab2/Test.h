@@ -12,15 +12,15 @@ public:
 
    Test() : N(0) {};
 
-   double f(const double& x, const double& y)
+   double f(const double& x)
    {
       switch(N)
       {
-         case(0): return (0) * lambda() + u(x, y) * gamma();
-         case(1): return (0) * lambda() + u(x, y) * gamma();
-         case(2): return (-4) * lambda() + u(x, y) * gamma();
-         case(3): return (-6 * x - 6 * y) * lambda() + u(x, y) * gamma();
-         case(4): return (-12 * x * x - 12 * y * y) * lambda() + u(x, y) * gamma();
+         case(0): return (0) * lambda() + u(x) * gamma();
+         case(1): return (0) * lambda() + u(x) * gamma();
+         case(2): return (-2) * lambda() + u(x) * gamma();
+         case(3): return (-6 * x) * lambda() + u(x) * gamma();
+         case(4): return (-12 * x * x) * lambda() + u(x) * gamma();
       };
    }
 
@@ -34,15 +34,15 @@ public:
       return 1;
    }
 
-   double u(const double& x, const double& y)
+   double u(const double& x)
    {
       switch(N)
       {
          case(0): return 2.0;
-         case(1): return x + y;
-         case(2): return x * x + y * y;
-         case(3): return x * x * x + y * y * y;
-         case(4): return x * x * x * x + y * y * y * y;
+         case(1): return x;
+         case(2): return x * x;
+         case(3): return x * x * x;
+         case(4): return x * x * x * x;
       };
    }
 };
