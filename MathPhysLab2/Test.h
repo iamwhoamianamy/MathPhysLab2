@@ -26,7 +26,7 @@ public:
 
    double lambda(const double& u)
    {
-      return u;
+      return 1;
    }
 
    /*double lambda_elem(const vector<double>& q, const vector<double>& x_elem, const double& x)

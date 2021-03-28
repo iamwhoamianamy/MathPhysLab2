@@ -205,16 +205,20 @@ public:
             //slae.bot_tr[to_add_i_tr++] += lambda / (3.0 * h) * G[2][1] + test.gamma() * h / 30.0 * C[2][1];
 
             // Заполнение диагонали матрицы
-            slae.di[to_add_i_di++] += lambda / (3.0 * h) * G[0][0] + test.gamma() * h / 30.0 * C[0][0];
-            slae.di[to_add_i_di++] += lambda / (3.0 * h) * G[1][1] + test.gamma() * h / 30.0 * C[1][1];
-            slae.di[to_add_i_di] += lambda / (3.0 * h) * G[2][2] + test.gamma() * h / 30.0 * C[2][2];
+            slae.di[to_add_i_di++] += (lambda[0] * 37 / 30 + lambda[1] * 1.2 - lambda[2] * 0.1) + 
+                                       test.gamma() * h / 30.0 * C[0][0];
+            slae.di[to_add_i_di++] += (lambda[0] * 1.6 + lambda[1] * 32 / 15 + lambda[2] * 1.6) +
+                                       test.gamma() * h / 30.0 * C[1][1];
+            slae.di[to_add_i_di] +=   (-lambda[0] * 0.1 + lambda[1] * 1.2 + lambda[2] * 37 / 30) +
+                                       test.gamma() * h / 30.0 * C[2][2];
 
             // Заполнение нижнего треугольника матрицы
-            slae.bot_tr[to_add_i_tr++] += lambda / (3.0 * h) * G[1][0] + test.gamma() * h / 30.0 * C[1][0];
-            slae.bot_tr[to_add_i_tr++] += lambda / (3.0 * h) * G[2][0] + test.gamma() * h / 30.0 * C[2][0];
-            slae.bot_tr[to_add_i_tr++] += lambda / (3.0 * h) * G[2][1] + test.gamma() * h / 30.0 * C[2][1];
-
-
+            slae.bot_tr[to_add_i_tr++] += (-lambda[0] * 22 / 15 - lambda[1] * 16 / 15 - lambda[2] * 2 / 15) +
+                                           test.gamma() * h / 30.0 * C[1][0];
+            slae.bot_tr[to_add_i_tr++] += (lambda[0] * 7 / 30 - lambda[1] * 2 / 15 + lambda[2] * 7 / 30) +
+                                           test.gamma() * h / 30.0 * C[2][0];
+            slae.bot_tr[to_add_i_tr++] += (-lambda[0] * 2 / 15 - lambda[1] * 16 / 15 - lambda[2] * 22 / 15) +
+                                           test.gamma() * h / 30.0 * C[2][1];
 
             // Заполнение вектора правой части
             slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * test.f(x_elem[0]) + C[0][1] * test.f(x_elem[1]) + C[0][2] * test.f(x_elem[2]));
