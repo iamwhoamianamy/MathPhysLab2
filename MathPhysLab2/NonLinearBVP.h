@@ -19,6 +19,7 @@ public:
    int elems_count = 0;       // Общее количество конечных элементов
 
    double big_num = 1E+20;    // Большое число для учета первого краевого условия
+   vector<double> q;         // Приближение функции u
 
    SLAE slae;                 // СЛАУ
    Test test;                 // Тестовая информация
@@ -40,7 +41,6 @@ public:
          {2, 16, 2},
          {-1, 2, 4}
       };
-
    }
 
    // Функция считывания областей из файла FILE_NAME
@@ -106,30 +106,36 @@ public:
          elems_count += r->elems_count;
       }
       fin.close();
+
+      q = vector<double>(nodes_count);
+
+      for(int i = 0; i < q.size(); i++)
+         q[i] = i % 2;
    }
 
-   // Функция формирования портрета глобальной матрицы
-   void FormPortrait()
+   // Функция инициализации матриц системы
+   void InitMatrix()
    {
-      slae.bot_tr.resize(elems_count * 3);
-      slae.top_tr.resize(elems_count * 3);
+      slae.bot_tr = vector<double>(elems_count * 3);
+      slae.top_tr = vector<double>(elems_count * 3);
+      slae.size = 0;
 
-      
       for(int reg_i = 0; reg_i < regions_count; reg_i++)
       {
          slae.size += regions[reg_i].elems_count * 2 + 1;
 
          if(reg_i + 1 < regions_count && grid[reg_i * 2 + 1] == grid[(reg_i + 1) * 2])
             slae.size--;
-            
       }
 
-      //slae.size += regions_count - 1;
+      slae.di = vector<double>(slae.size);
+      slae.b = vector<double>(slae.size);
+      slae.ind = vector<int>(slae.size + 1);
+   }
 
-      slae.di.resize(slae.size);
-      slae.b.resize(slae.size);
-      slae.ind.resize(slae.size + 1);
-
+   // Функция формирования портрета глобальной матрицы
+   void FormPortrait()
+   {
       slae.ind[0] = 0;
       slae.ind[1] = 0;
       slae.ind[2] = 1;
@@ -150,8 +156,6 @@ public:
 
          if(reg_i + 1 < regions_count && grid[reg_i * 2 + 1] != grid[(reg_i + 1) * 2])
             slae.ind[global_i++] = val;
-
-         //slae.ind[global_i++] = (elem_i) * 3;
       }
    }
 
@@ -173,29 +177,49 @@ public:
             int elem_beg_i = elem_i * 2;
 
             // Координаты узлов
-            double x0 = r->nodes[elem_beg_i];
-            double x1 = r->nodes[elem_beg_i + 1];
-            double x2 = r->nodes[elem_beg_i + 2];
-
-            double h = x2 - x0;
+            vector<double> x_elem = { r->nodes[elem_beg_i], r->nodes[elem_beg_i + 1], r->nodes[elem_beg_i + 2] };
+            double h = x_elem[2] - x_elem[0];
 
             // Индекс первого узла элемента в глобальной нумерации
-            //int elem_beg_i = elem_i * 2 + r->first_i;
+            int elem_beg_i_glob = elem_i * 2 + r->first_i;
+
+            vector<double> q_elem = { q[elem_beg_i_glob], q[elem_beg_i_glob + 1], q[elem_beg_i_glob + 2] };
+            //vector<double> q = { 0, 0.5, 1 };
+
+            /*double lambda = (test.lambda_elem(q_elem, x_elem, x_elem[0]) +
+                             test.lambda_elem(q_elem, x_elem, x_elem[1]) +
+                             test.lambda_elem(q_elem, x_elem, x_elem[2]));*/
+
+            vector<double> lambda = { test.lambda(test.u_elem(q_elem, x_elem[0])),
+                                      test.lambda(test.u_elem(q_elem, x_elem[1])),
+                                      test.lambda(test.u_elem(q_elem, x_elem[2])) };
+
+            //// Заполнение диагонали матрицы
+            //slae.di[to_add_i_di++] += lambda / (3.0 * h) * G[0][0] + test.gamma() * h / 30.0 * C[0][0];
+            //slae.di[to_add_i_di++] += lambda / (3.0 * h) * G[1][1] + test.gamma() * h / 30.0 * C[1][1];
+            //slae.di[to_add_i_di  ] += lambda / (3.0 * h) * G[2][2] + test.gamma() * h / 30.0 * C[2][2];
+
+            //// Заполнение нижнего треугольника матрицы
+            //slae.bot_tr[to_add_i_tr++] += lambda / (3.0 * h) * G[1][0] + test.gamma() * h / 30.0 * C[1][0];
+            //slae.bot_tr[to_add_i_tr++] += lambda / (3.0 * h) * G[2][0] + test.gamma() * h / 30.0 * C[2][0];
+            //slae.bot_tr[to_add_i_tr++] += lambda / (3.0 * h) * G[2][1] + test.gamma() * h / 30.0 * C[2][1];
 
             // Заполнение диагонали матрицы
-            slae.di[to_add_i_di++] += test.lambda() / (3.0 * h) * G[0][0] + test.gamma() * h / 30.0 * C[0][0];
-            slae.di[to_add_i_di++] += test.lambda() / (3.0 * h) * G[1][1] + test.gamma() * h / 30.0 * C[1][1];
-            slae.di[to_add_i_di  ] += test.lambda() / (3.0 * h) * G[2][2] + test.gamma() * h / 30.0 * C[2][2];
+            slae.di[to_add_i_di++] += lambda / (3.0 * h) * G[0][0] + test.gamma() * h / 30.0 * C[0][0];
+            slae.di[to_add_i_di++] += lambda / (3.0 * h) * G[1][1] + test.gamma() * h / 30.0 * C[1][1];
+            slae.di[to_add_i_di] += lambda / (3.0 * h) * G[2][2] + test.gamma() * h / 30.0 * C[2][2];
 
             // Заполнение нижнего треугольника матрицы
-            slae.bot_tr[to_add_i_tr++] += test.lambda() / (3.0 * h) * G[1][0] + test.gamma() * h / 30.0 * C[1][0];
-            slae.bot_tr[to_add_i_tr++] += test.lambda() / (3.0 * h) * G[2][0] + test.gamma() * h / 30.0 * C[2][0];
-            slae.bot_tr[to_add_i_tr++] += test.lambda() / (3.0 * h) * G[2][1] + test.gamma() * h / 30.0 * C[2][1];
+            slae.bot_tr[to_add_i_tr++] += lambda / (3.0 * h) * G[1][0] + test.gamma() * h / 30.0 * C[1][0];
+            slae.bot_tr[to_add_i_tr++] += lambda / (3.0 * h) * G[2][0] + test.gamma() * h / 30.0 * C[2][0];
+            slae.bot_tr[to_add_i_tr++] += lambda / (3.0 * h) * G[2][1] + test.gamma() * h / 30.0 * C[2][1];
+
+
 
             // Заполнение вектора правой части
-            slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * test.f(x0) + C[0][1] * test.f(x1) + C[0][2] * test.f(x2));
-            slae.b[to_add_i_di - 1] += h / 30.0 * (C[1][0] * test.f(x0) + C[1][1] * test.f(x1) + C[1][2] * test.f(x2));
-            slae.b[to_add_i_di - 0] += h / 30.0 * (C[2][0] * test.f(x0) + C[2][1] * test.f(x1) + C[2][2] * test.f(x2));
+            slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * test.f(x_elem[0]) + C[0][1] * test.f(x_elem[1]) + C[0][2] * test.f(x_elem[2]));
+            slae.b[to_add_i_di - 1] += h / 30.0 * (C[1][0] * test.f(x_elem[0]) + C[1][1] * test.f(x_elem[1]) + C[1][2] * test.f(x_elem[2]));
+            slae.b[to_add_i_di - 0] += h / 30.0 * (C[2][0] * test.f(x_elem[0]) + C[2][1] * test.f(x_elem[1]) + C[2][2] * test.f(x_elem[2]));
          }
       }
       slae.top_tr = slae.bot_tr;
@@ -262,7 +286,48 @@ public:
          }
       }
       fout << "||u-u*||/||u*|| = " << scientific << sqrt(norm) / sqrt(norm_u) << endl;
-      fout << "||u-u*|| = " << scientific << sqrt(norm);
+      fout << "||u-u*|| = " << scientific << sqrt(norm) << endl;
       fout.close();
+   }
+
+   // Вывод решения в файл FILE_NAME
+   void PrintSolution(ofstream& fout)
+   {
+      double norm = 0., norm_u = 0.;
+
+      fout << "   x              calc           prec      dif            N  location" << endl << fixed;
+
+      for(int reg_i = 0; reg_i < regions_count; reg_i++)
+      {
+         Region* r = &regions[reg_i];
+
+         for(int node_i = 0; node_i < r->nodes_count; node_i++)
+         {
+            // Индекс узла в глобальной нумерации
+            int elem_beg_i = node_i + r->first_i;
+
+            fout << setw(11) << r->nodes[node_i];
+            double t = slae.b[elem_beg_i];
+            fout << setw(15) << t;
+            double tt = test.u(r->nodes[node_i]);
+            fout << setw(15) << tt;
+            fout << setw(14) << scientific << abs(t - tt) << fixed;
+
+            fout << setw(4) << elem_beg_i << " ";
+
+
+            if(node_i == 0 || node_i == r->nodes_count - 1)
+               fout << "  border";
+            else
+               fout << "  inner";
+
+            fout << endl;
+
+            norm_u += tt * tt;
+            norm += abs(t - tt) * abs(t - tt);
+         }
+      }
+      fout << "||u-u*||/||u*|| = " << scientific << sqrt(norm) / sqrt(norm_u) << endl;
+      fout << "||u-u*|| = " << scientific << sqrt(norm) << endl;
    }
 };
