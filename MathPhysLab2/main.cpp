@@ -11,7 +11,7 @@ int main()
 
    ofstream fout("result.txt");
 
-   for(int i = 0; i < 100; i++)
+   for(int i = 0; i < 1; i++)
    {
       nl.InitMatrix();
       nl.FormPortrait();

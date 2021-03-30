@@ -16,17 +16,22 @@ public:
    {
       switch(N)
       {
-         case(0): return (0) * lambda(u(x)) + u(x) * gamma();
-         case(1): return (0) * lambda(u(x)) + u(x) * gamma();
-         case(2): return (-2) * lambda(u(x)) + u(x) * gamma();
-         case(3): return (-6 * x) * lambda(u(x)) + u(x) * gamma();
-         case(4): return (-12 * x * x) * lambda(u(x)) + u(x) * gamma();
+         case(0): return -1 * dlambdadx(x) * dudx(x) + u(x) * gamma();
+         case(1): return -1 * dlambdadx(x) * dudx(x) + u(x) * gamma();
+         case(2): return -1 * dlambdadx(x) * dudx(x) + u(x) * gamma();
+         case(3): return -1 * dlambdadx(x) * dudx(x) + u(x) * gamma();
+         case(4): return -1 * dlambdadx(x) * dudx(x) + u(x) * gamma();
       };
    }
 
-   double lambda(const double& u)
+   double lambda(const double& x)
    {
-      return 1;
+      return 3 * x + 1;
+   }
+
+   double dlambdadx(const double& x)
+   {
+      return 3;
    }
 
    /*double lambda_elem(const vector<double>& q, const vector<double>& x_elem, const double& x)
@@ -46,6 +51,18 @@ public:
    double gamma()
    {
       return 1;
+   }
+
+   double dudx(const double& x)
+   {
+      switch(N)
+      {
+         case(0): return 0;
+         case(1): return 1;
+         case(2): return 2 * x;
+         case(3): return 3 * x * x;
+         case(4): return 4 * x * x * x;
+      };
    }
 
    double u(const double& x)
