@@ -110,10 +110,10 @@ public:
       }
       fin.close();
 
-      q.resize(nodes_count);
+      q.resize(nodes_count, 0);
 
-      for(int i = 0; i < nodes_count; i++)
-         q[i] = 11 + 0.25 * (i);
+      /*for(int i = 0; i < nodes_count; i++)
+         q[i] = pow(11 + 0.25 * (i), 2) ;*/
 
       t.resize(nodes_count);
    }
@@ -210,18 +210,20 @@ public:
             slae.bot_tr[to_add_i_tr++] += (-lambda[0] * 2 / 15 - lambda[1] * 16 / 15 - lambda[2] * 22 / 15) / h +
                                            test.gamma() * h / 30.0 * C[2][1];
 
+            vector<double> f_elem = { test.f(x_elem[0]),
+                                      test.f(x_elem[1]),
+                                      test.f(x_elem[2]) };
+
             // Заполнение вектора правой части
-            slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * test.f(x_elem[0]) +
-                                                   C[0][1] * test.f(x_elem[1]) +
-                                                   C[0][2] * test.f(x_elem[2]));
-                                                                             
-            slae.b[to_add_i_di - 1] += h / 30.0 * (C[1][0] * test.f(x_elem[0])+
-                                                   C[1][1] * test.f(x_elem[1]) +
-                                                   C[1][2] * test.f(x_elem[2]));
-                                                                             
-            slae.b[to_add_i_di - 0] += h / 30.0 * (C[2][0] * test.f(x_elem[0]) +
-                                                   C[2][1] * test.f(x_elem[1]) +
-                                                   C[2][2] * test.f(x_elem[2]));
+            slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * f_elem[0] +
+                                                   C[0][1] * f_elem[1] +
+                                                   C[0][2] * f_elem[2]);
+            slae.b[to_add_i_di - 1] += h / 30.0 * (C[1][0] * f_elem[0] +
+                                                   C[1][1] * f_elem[1] +
+                                                   C[1][2] * f_elem[2]);
+            slae.b[to_add_i_di - 0] += h / 30.0 * (C[2][0] * f_elem[0] +
+                                                   C[2][1] * f_elem[1] +
+                                                   C[2][2] * f_elem[2]);
          }
       }
       slae.top_tr = slae.bot_tr;
@@ -294,6 +296,7 @@ public:
 
          delta_residual = CalcNorm(t) / CalcNorm(slae.b);
 
+         fout << endl << "Iteration = " << n_iter << endl;
          PrintSolution(fout);
 
          q = slae.b;
@@ -346,7 +349,7 @@ public:
       fout.close();
    }
 
-   // Вывод решения в файл FILE_NAME
+   // Вывод решения в файл поток fout
    void PrintSolution(ofstream& fout)
    {
       double norm = 0., norm_u = 0.;

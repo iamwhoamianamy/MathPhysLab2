@@ -6,39 +6,43 @@ class Test
 {
 public:
 
-   int N;
+   int N, M;
 
-   Test(const int& t_N) : N(t_N) {};
+   Test(const int& t_N, const int& t_M) : N(t_N), M(t_M) {};
 
-   Test() : N(0) {};
+   Test() : N(0), M(0) {};
 
    double f(const double& x)
    {
-      return -1 * dlambdadx(x) * dudx(x) + u_prec(x) * gamma();
+      return -1 * (dudx(x) * dlambdadx(x) + d2udx2(x) * lambda(u_prec(x))) + u_prec(x) * gamma();
    }
 
    double lambda(const double& u)
    {
-      return 3 * u * u + 1;
+      switch(M)
+      {
+         case 0: return 1;
+         case 1: return 3 * u * u + 1;;
+      }
    }
 
-   double dlambdadx(const double& u)
+   double dlambdadx(const double& x)
    {
-      return 6 * u;
-   }
-
-   /*double lambda_elem(const vector<double>& q, const vector<double>& x_elem, const double& x)
-   {
-      return lambda(u_elem(q, x_elem[0])) * 2 * (x - 0.5) * (x - 1) +
-             lambda(u_elem(q, x_elem[1])) * (-4 * x) * (x - 1) +
-             lambda(u_elem(q, x_elem[2])) * 2 * x * (x - 0.5);
-   }*/
-
-   double u_elem(const vector<double>& q, const double& x)
-   {
-      return q[0] * 2 * (x - 0.5) * (x - 1) +
-             q[1] * (-4 * x) * (x - 1) +
-             q[2] * 2 * x * (x - 0.5);
+      switch(M)
+      {
+         case 0: return 0;
+         case 1:
+         {
+            switch(N)
+            {
+               case(0): return 2.0;
+               case(1): return 150 * x;
+               case(2): return 12 * x * x * x;
+               case(3): return 18 * x * x * x * x * x;
+               case(4): return 24 * pow(x, 7);
+            }
+         }
+      }
    }
 
    double gamma()
@@ -46,27 +50,39 @@ public:
       return 1;
    }
 
+   double u_prec(const double& x)
+   {
+      switch(N)
+      {
+         case(0): return 2.0;
+         case(1): return 5 * x;
+         case(2): return x * x;
+         case(3): return x * x * x;
+         case(4): return x * x * x * x;
+      };
+   }
+
    double dudx(const double& x)
    {
       switch(N)
       {
          case(0): return 0;
-         case(1): return 1;
+         case(1): return 5;
          case(2): return 2 * x;
          case(3): return 3 * x * x;
          case(4): return 4 * x * x * x;
       };
    }
 
-   double u_prec(const double& x)
+   double d2udx2(const double& x)
    {
       switch(N)
       {
-         case(0): return 2.0;
-         case(1): return x;
-         case(2): return x * x;
-         case(3): return x * x * x;
-         case(4): return x * x * x * x;
+         case(0): return 0;
+         case(1): return 0;
+         case(2): return 2;
+         case(3): return 6 * x;
+         case(4): return 12 * x * x;
       };
    }
 };
