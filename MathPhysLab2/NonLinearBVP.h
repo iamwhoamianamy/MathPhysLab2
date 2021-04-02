@@ -24,6 +24,9 @@ public:
    SLAE slae;                 // СЛАУ
    Test test;                 // Тестовая информация
 
+   vector<double> t;         // Вспомогательный вектор для метода
+                              // простой итерации
+
    // Вспомогательные матрицы для построения матриц 
    // жесткости и массы конечного элемента
    vector<vector<int>> G, C;
@@ -107,10 +110,12 @@ public:
       }
       fin.close();
 
-      q = vector<double>(nodes_count);
+      q.resize(nodes_count);
 
-      for(int i = 0; i < q.size(); i++)
-         q[i] = i % 2;
+      for(int i = 0; i < nodes_count; i++)
+         q[i] = 11 + 0.25 * (i);
+
+      t.resize(nodes_count);
    }
 
    // Функция инициализации матриц системы
@@ -184,23 +189,10 @@ public:
             int elem_beg_i_glob = elem_i * 2 + r->first_i;
 
             vector<double> q_elem = { q[elem_beg_i_glob], q[elem_beg_i_glob + 1], q[elem_beg_i_glob + 2] };
-            //vector<double> q = { 0, 0.5, 1 };
 
-            /*double lambda = (test.lambda_elem(q_elem, x_elem, x_elem[0]) +
-                             test.lambda_elem(q_elem, x_elem, x_elem[1]) +
-                             test.lambda_elem(q_elem, x_elem, x_elem[2]));*/
-
-            /*vector<double> lambda = { test.lambda(test.u_elem(q_elem, x_elem[0])),
-                                      test.lambda(test.u_elem(q_elem, x_elem[1])),
-                                      test.lambda(test.u_elem(q_elem, x_elem[2])) };*/
-
-            vector<double> lambda = { test.lambda(x_elem[0]),
-                                      test.lambda(x_elem[1]),
-                                      test.lambda(x_elem[2]) };
-
-            /*vector<double> lambda = { 2,
-                                      2,
-                                      2 };*/
+            vector<double> lambda = { test.lambda(q_elem[0]),
+                                      test.lambda(q_elem[1]),
+                                      test.lambda(q_elem[2]) };
 
             // Заполнение диагонали матрицы
             slae.di[to_add_i_di++] += (lambda[0] * 37 / 30 + lambda[1] * 1.2 - lambda[2] * 0.1) / h + 
@@ -219,9 +211,17 @@ public:
                                            test.gamma() * h / 30.0 * C[2][1];
 
             // Заполнение вектора правой части
-            slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * test.f(x_elem[0]) + C[0][1] * test.f(x_elem[1]) + C[0][2] * test.f(x_elem[2]));
-            slae.b[to_add_i_di - 1] += h / 30.0 * (C[1][0] * test.f(x_elem[0]) + C[1][1] * test.f(x_elem[1]) + C[1][2] * test.f(x_elem[2]));
-            slae.b[to_add_i_di - 0] += h / 30.0 * (C[2][0] * test.f(x_elem[0]) + C[2][1] * test.f(x_elem[1]) + C[2][2] * test.f(x_elem[2]));
+            slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * test.f(x_elem[0]) +
+                                                   C[0][1] * test.f(x_elem[1]) +
+                                                   C[0][2] * test.f(x_elem[2]));
+                                                                             
+            slae.b[to_add_i_di - 1] += h / 30.0 * (C[1][0] * test.f(x_elem[0])+
+                                                   C[1][1] * test.f(x_elem[1]) +
+                                                   C[1][2] * test.f(x_elem[2]));
+                                                                             
+            slae.b[to_add_i_di - 0] += h / 30.0 * (C[2][0] * test.f(x_elem[0]) +
+                                                   C[2][1] * test.f(x_elem[1]) +
+                                                   C[2][2] * test.f(x_elem[2]));
          }
       }
       slae.top_tr = slae.bot_tr;
@@ -237,15 +237,70 @@ public:
          if(r->left_bord == 1)
          {
             slae.di[r->first_i] = big_num;
-            slae.b[r->first_i] = big_num * test.u(r->nodes[0]);
+            slae.b[r->first_i] = big_num * test.u_prec(r->nodes[0]);
          }
 
          if(r->right_bord == 1)
          {
             slae.di[r->first_i + r->nodes_count - 1] = big_num;
-            slae.b[r->first_i + r->nodes_count - 1] = big_num * test.u(r->nodes[r->nodes_count - 1]);
+            slae.b[r->first_i + r->nodes_count - 1] = big_num * test.u_prec(r->nodes[r->nodes_count - 1]);
          }
       }
+   }
+
+   double CalcNorm(const vector<double>& vec)
+   {
+      double res = 0;
+      int size = vec.size();
+
+      for(int i = 0; i < size; i++)
+         res += vec[i] * vec[i];
+      
+      return sqrt(res);
+   }
+
+   // Линеаризация методом простой итераций, вывод итераций в файл file_name
+   void SimpleIterations(const double& eps, const double& delta, const int& max_iter, const string& file_name)
+   {
+      ofstream fout(file_name);
+
+      int n_iter = 0;
+      double eps_residual = 1;
+      double delta_residual = 1;
+
+      do
+      {
+         InitMatrix();
+         FormPortrait();
+         FillMatrix();
+         AccountBound();
+
+         if(n_iter > 0)
+         {
+            slae.MatVecMult(q, t);
+
+            for(int i = 0; i < nodes_count; i++)
+               t[i] -= slae.b[i];
+
+            eps_residual = CalcNorm(t) / CalcNorm(slae.b) * big_num;
+         }
+
+         slae.LUDecomp();
+         slae.ForwardSolver();
+         slae.BackwardSolver();
+
+         for(int i = 0; i < nodes_count; i++)
+            t[i] = slae.b[i] - q[i];
+
+         delta_residual = CalcNorm(t) / CalcNorm(slae.b);
+
+         PrintSolution(fout);
+
+         q = slae.b;
+         n_iter++;
+      } while(0 < n_iter && n_iter <  max_iter && eps_residual > eps && delta_residual > delta);
+
+      fout.close();
    }
 
    // Вывод решения в файл FILE_NAME
@@ -268,7 +323,7 @@ public:
             fout << setw(11) << r->nodes[node_i];
             double t = slae.b[elem_beg_i];
             fout << setw(15) << t;
-            double tt = test.u(r->nodes[node_i]);
+            double tt = test.u_prec(r->nodes[node_i]);
             fout << setw(15) << tt;
             fout << setw(14) << scientific << abs(t - tt) << fixed;
 
@@ -310,7 +365,7 @@ public:
             fout << setw(11) << r->nodes[node_i];
             double t = slae.b[elem_beg_i];
             fout << setw(15) << t;
-            double tt = test.u(r->nodes[node_i]);
+            double tt = test.u_prec(r->nodes[node_i]);
             fout << setw(15) << tt;
             fout << setw(14) << scientific << abs(t - tt) << fixed;
 

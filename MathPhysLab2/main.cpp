@@ -8,26 +8,7 @@ int main()
 
    nl.ReadFormGrid("regions.txt");
 
-
-   ofstream fout("result.txt");
-
-   for(int i = 0; i < 1; i++)
-   {
-      nl.InitMatrix();
-      nl.FormPortrait();
-      nl.FillMatrix();
-      nl.AccountBound();
-
-      nl.slae.LUDecomp();
-      nl.slae.ForwardSolver();
-      nl.slae.BackwardSolver();
-
-      nl.q = nl.slae.b;
-
-      nl.PrintSolution(fout);
-   }
-
-   fout.close();
+   nl.SimpleIterations(1e-14, 1e-14, 100, "result.txt");
 
    int asd = 1111;
 }

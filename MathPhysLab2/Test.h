@@ -14,24 +14,17 @@ public:
 
    double f(const double& x)
    {
-      switch(N)
-      {
-         case(0): return -1 * dlambdadx(x) * dudx(x) + u(x) * gamma();
-         case(1): return -1 * dlambdadx(x) * dudx(x) + u(x) * gamma();
-         case(2): return -1 * dlambdadx(x) * dudx(x) + u(x) * gamma();
-         case(3): return -1 * dlambdadx(x) * dudx(x) + u(x) * gamma();
-         case(4): return -1 * dlambdadx(x) * dudx(x) + u(x) * gamma();
-      };
+      return -1 * dlambdadx(x) * dudx(x) + u_prec(x) * gamma();
    }
 
-   double lambda(const double& x)
+   double lambda(const double& u)
    {
-      return 3 * x + 1;
+      return 3 * u * u + 1;
    }
 
-   double dlambdadx(const double& x)
+   double dlambdadx(const double& u)
    {
-      return 3;
+      return 6 * u;
    }
 
    /*double lambda_elem(const vector<double>& q, const vector<double>& x_elem, const double& x)
@@ -65,7 +58,7 @@ public:
       };
    }
 
-   double u(const double& x)
+   double u_prec(const double& x)
    {
       switch(N)
       {
