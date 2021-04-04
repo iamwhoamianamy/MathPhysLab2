@@ -32,9 +32,15 @@
     <ClInclude Include="Test.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="regions.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="time.txt">
       <Filter>Файлы ресурсов</Filter>
     </Text>
   </ItemGroup>

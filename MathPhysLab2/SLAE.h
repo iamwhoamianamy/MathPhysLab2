@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "Matrix.h"
 
 using namespace std;
 
@@ -7,58 +8,36 @@ using namespace std;
 class SLAE
 {
 public:
-   vector<double> bot_tr;     // Нижний треугольник матрицы системы
-   vector<double> top_tr;     // Верхний треугольник матрицы системы
-   vector<double> di;         // Диагональ матрицы системы
+   
+   Matrix m;                  // Матрица системы
    vector<double> b;          // Вектор правой части
-
-   vector<int> ind;           // Указатели начала строк
-
-   int size;                  // Размер матрицы системы
-
-   // Умножение матрицы на вектор vec, результат в res
-   void MatVecMult(const vector<double> &vec, vector<double> &res)
-   {
-      for(int i = 0; i < size; i++)
-      {
-         res[i] = vec[i] * di[i];
-
-         int i0 = ind[i + 0], i1 = ind[i + 1];
-
-         for(int j = i - (i1 - i0), k = i0; j < i; j++, k++)
-         {
-            res[i] += vec[j] * bot_tr[k];
-            res[j] += vec[i] * top_tr[k];
-         }
-      }
-   }
 
    // Алгоритм прямого прохода
    void ForwardSolver()
    {
-      for(int i = 0; i < size; i++)
+      for(int i = 0; i < m.size; i++)
       {
-         int i0 = ind[i + 0], i1 = ind[i + 1];
+         int i0 = m.ind[i + 0], i1 = m.ind[i + 1];
 
          double s = 0;
 
          for(int j = i - (i1 - i0), k = i0; j < i; j++, k++)
-            s += b[j] * bot_tr[k];
+            s += b[j] * m.bot_tr[k];
 
-         b[i] = (b[i] - s) / di[i];
+         b[i] = (b[i] - s) / m.di[i];
       }
    }
 
    // Алгоритм обратного прохода
    void BackwardSolver()
    {
-      for(int i = size - 1; i >= 0; i--)
+      for(int i = m.size - 1; i >= 0; i--)
       {
-         int i0 = ind[i + 0], i1 = ind[i + 1];
+         int i0 = m.ind[i + 0], i1 = m.ind[i + 1];
 
          double xi = b[i];
          for(int j = i - (i1 - i0), k = i0; j < i; j++, k++)
-            b[j] -= xi * top_tr[k];
+            b[j] -= xi * m.top_tr[k];
 
          b[i] = xi;
       }
@@ -67,15 +46,15 @@ public:
    // LU - разложение матрицы системы
    void LUDecomp()
    {
-      for(int i = 0; i < size; i++)
+      for(int i = 0; i < m.size; i++)
       {
-         int i0 = ind[i + 0], i1 = ind[i + 1];
+         int i0 = m.ind[i + 0], i1 = m.ind[i + 1];
 
          double sd = 0;
          for(int j = i - (i1 - i0), k = i0; j < i; j++, k++)
          {
             double sl = 0, su = 0;
-            int j0 = ind[j + 0], j1 = ind[j + 1];
+            int j0 = m.ind[j + 0], j1 = m.ind[j + 1];
             int kol_i = k - i0, kol_j = j1 - j0;
             int kol_r = kol_i - kol_j, ki = i0, kj = j0;
 
@@ -86,18 +65,18 @@ public:
 
             for(; ki < k; ki++, kj++)
             {
-               sl += bot_tr[ki] * top_tr[kj];
-               su += bot_tr[kj] * top_tr[ki];
+               sl += m.bot_tr[ki] * m.top_tr[kj];
+               su += m.bot_tr[kj] * m.top_tr[ki];
             }
 
-            bot_tr[k] = bot_tr[k] - sl;
-            top_tr[k] = top_tr[k] - su;
-            top_tr[k] /= di[j];
+            m.bot_tr[k] = m.bot_tr[k] - sl;
+            m.top_tr[k] = m.top_tr[k] - su;
+            m.top_tr[k] /= m.di[j];
 
-            sd += bot_tr[k] * top_tr[k];
+            sd += m.bot_tr[k] * m.top_tr[k];
          }
 
-         di[i] = di[i] - sd;
+         m.di[i] = m.di[i] - sd;
       }
    }
 }; 

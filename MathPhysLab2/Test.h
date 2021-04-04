@@ -26,6 +26,7 @@ public:
       }
    }
 
+   // Производная lambda по x после подстановки x в функцию u
    double dlambdadx(const double& x)
    {
       switch(M)
@@ -50,6 +51,7 @@ public:
       return 1;
    }
 
+   // Точное решение
    double u_prec(const double& x)
    {
       switch(N)
@@ -62,6 +64,7 @@ public:
       };
    }
 
+   // Первая производная точного решения
    double dudx(const double& x)
    {
       switch(N)
@@ -74,6 +77,7 @@ public:
       };
    }
 
+   // Вторая производная точного решения
    double d2udx2(const double& x)
    {
       switch(N)

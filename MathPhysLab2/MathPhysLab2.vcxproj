@@ -142,6 +142,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Matrix.h" />
     <ClInclude Include="NonLinearBVP.h" />
     <ClInclude Include="Region.h" />
     <ClInclude Include="SLAE.h" />
@@ -149,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="regions.txt" />
+    <Text Include="time.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

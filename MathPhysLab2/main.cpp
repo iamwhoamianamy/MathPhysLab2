@@ -4,11 +4,14 @@
 int main()
 {
    NonLinearBVP nl = NonLinearBVP();
-   nl.test = Test(1, 0);
+   nl.test = Test(1, 1);
 
    nl.ReadFormGrid("regions.txt");
+   nl.ReadFormtimeGrid("time.txt");
 
-   nl.SimpleIterations(1e-14, 1e-14, 100, "result.txt");
+
+   nl.ExplicitScheme("result.txt");
+
 
    int asd = 1111;
 }
