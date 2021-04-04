@@ -12,9 +12,9 @@ public:
 
    Test() : N(0), M(0) {};
 
-   double f(const double& x)
+   double f(const double& x, const double& t)
    {
-      return -1 * (dudx(x) * dlambdadx(x) + d2udx2(x) * lambda(u_prec(x))) + u_prec(x) * gamma();
+      return -1 * (dudx(x) * dlambdadx(x) + d2udx2(x) * lambda(u_prec(x, t))) + sigma() * dudt(t);
    }
 
    double lambda(const double& u)
@@ -46,25 +46,25 @@ public:
       }
    }
 
-   double gamma()
+   double sigma()
    {
       return 1;
    }
 
    // Точное решение
-   double u_prec(const double& x)
+   double u_prec(const double& x, const double& t)
    {
       switch(N)
       {
          case(0): return 2.0;
-         case(1): return 5 * x;
+         case(1): return 5 * x + 2 * t;
          case(2): return x * x;
          case(3): return x * x * x;
          case(4): return x * x * x * x;
       };
    }
 
-   // Первая производная точного решения
+   // Первая производная точного решения по х
    double dudx(const double& x)
    {
       switch(N)
@@ -77,7 +77,7 @@ public:
       };
    }
 
-   // Вторая производная точного решения
+   // Вторая производная точного решения по х
    double d2udx2(const double& x)
    {
       switch(N)
@@ -87,6 +87,19 @@ public:
          case(2): return 2;
          case(3): return 6 * x;
          case(4): return 12 * x * x;
+      };
+   }
+
+   // Производная точного решения по t
+   double dudt(const double& t)
+   {
+      switch(N)
+      {
+         case(0): return 0;
+         case(1): return 2;
+         case(2): return 0;
+         case(3): return 0;
+         case(4): return 0;
       };
    }
 };

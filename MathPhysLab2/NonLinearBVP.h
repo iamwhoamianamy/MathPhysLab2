@@ -198,7 +198,7 @@ public:
    }
 
    // Функция заполнения матриц жесткости и массы
-   void FillMatrices()
+   void FillMatrices(const double& t)
    {
       // Индекс очередного элемента в треугольнике матрицы
       int to_add_i_tr = 0;
@@ -241,18 +241,18 @@ public:
             to_add_i_tr -= 3;
 
             // Заполнение диагонали матрицы массы
-            M.di[to_add_i_di++] += test.gamma() * h / 30.0 * C[0][0];
-            M.di[to_add_i_di++] += test.gamma() * h / 30.0 * C[1][1];
-            M.di[to_add_i_di]   += test.gamma() * h / 30.0 * C[2][2];
+            M.di[to_add_i_di++] += test.sigma() * h / 30.0 * C[0][0];
+            M.di[to_add_i_di++] += test.sigma() * h / 30.0 * C[1][1];
+            M.di[to_add_i_di]   += test.sigma() * h / 30.0 * C[2][2];
 
             // Заполнение нижнего треугольника массы
-            M.bot_tr[to_add_i_tr++] += test.gamma() * h / 30.0 * C[1][0];
-            M.bot_tr[to_add_i_tr++] += test.gamma() * h / 30.0 * C[2][0];
-            M.bot_tr[to_add_i_tr++] += test.gamma() * h / 30.0 * C[2][1];
+            M.bot_tr[to_add_i_tr++] += test.sigma() * h / 30.0 * C[1][0];
+            M.bot_tr[to_add_i_tr++] += test.sigma() * h / 30.0 * C[2][0];
+            M.bot_tr[to_add_i_tr++] += test.sigma() * h / 30.0 * C[2][1];
 
-            vector<double> f_elem = { test.f(x_elem[0]),
-                                      test.f(x_elem[1]),
-                                      test.f(x_elem[2]) };
+            vector<double> f_elem = { test.f(x_elem[0], t),
+                                      test.f(x_elem[1], t),
+                                      test.f(x_elem[2], t) };
 
             // Заполнение вектора правой части
             slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * f_elem[0] +
@@ -266,6 +266,8 @@ public:
                                                    C[2][2] * f_elem[2]);
          }
       }
+
+      // Заполнение верхних треуголников
       G.top_tr = G.bot_tr;
       M.top_tr = M.bot_tr;
    }
@@ -284,7 +286,7 @@ public:
    }
 
    // Функция учета краевых условий
-   void AccountBound()
+   void AccountBound(const double& t)
    {
       for(int reg_i = 0; reg_i < regions_count; reg_i++)
       {
@@ -293,13 +295,13 @@ public:
          if(r->left_bord == 1)
          {
             slae.m.di[r->first_i] = big_num;
-            slae.b[r->first_i] = big_num * test.u_prec(r->nodes[0]);
+            slae.b[r->first_i] = big_num * test.u_prec(r->nodes[0], t);
          }
 
          if(r->right_bord == 1)
          {
             slae.m.di[r->first_i + r->nodes_count - 1] = big_num;
-            slae.b[r->first_i + r->nodes_count - 1] = big_num * test.u_prec(r->nodes[r->nodes_count - 1]);
+            slae.b[r->first_i + r->nodes_count - 1] = big_num * test.u_prec(r->nodes[r->nodes_count - 1], t);
          }
       }
    }
@@ -317,7 +319,7 @@ public:
    }
 
    // Линеаризация методом простой итераций, вывод итераций в файл file_name
-   void SimpleIterations(const double& eps, const double& delta, const int& max_iter, ofstream& fout)
+   void SimpleIterations(const double& t, const double& eps, const double& delta, const int& max_iter, ofstream& fout)
    {
       int n_iter = 0;
       double eps_residual = 1;
@@ -333,11 +335,11 @@ public:
 
          // Сборка матриц жесткости и массы
          FormPortrait();
-         FillMatrices();
+         FillMatrices(t);
 
          // Сборка матрицы системы
          GlobalMatrixAssemble();
-         AccountBound();
+         AccountBound(t);
 
          /*vec_1 = vector<double>(nodes_count);
          slae.m.MatVecMult(q, vec_1);
@@ -371,7 +373,7 @@ public:
             q = slae.b;
 
             fout << endl << "Non-linear iteration " << n_iter << endl;
-            PrintSolution(fout);
+            PrintSolution(t, fout);
             n_iter++;
          }
       } while(0 < n_iter && n_iter <  max_iter);
@@ -393,16 +395,22 @@ public:
 
          for(int elem_i = 0; elem_i < r->elems_count; elem_i++)
          {
-            q_1[to_add_i++] = test.u_prec(r->nodes[elem_i * 2]);
-            q_1[to_add_i++] = test.u_prec(r->nodes[elem_i * 2 + 1]);
-            q_1[to_add_i] = test.u_prec(r->nodes[elem_i * 2 + 2]);
+            q_1[to_add_i++] = test.u_prec(r->nodes[elem_i * 2], 0.0);
+            q_1[to_add_i++] = test.u_prec(r->nodes[elem_i * 2 + 1], 0.0);
+            q_1[to_add_i] = test.u_prec(r->nodes[elem_i * 2 + 2], 0.0);
          }
       }
 
       for(int time_i = 1; time_i < time_grid.size(); time_i++)
       {
+         for(int i = 0; i < 100; i++)
+            fout << "#";
+
+         fout << endl;
+         const double t = time_grid[time_i];
+
          // Решение нелинейности
-         SimpleIterations(1e-14, 1e-14, 100, fout);
+         //SimpleIterations(t, 1e-14, 1e-14, 100, fout);
 
          // Инициализация матриц
          InitMatrix(slae.m);
@@ -412,46 +420,46 @@ public:
 
          // Сборка матриц жесткости и массы
          FormPortrait();
-         FillMatrices();
+         FillMatrices(t);
 
-         // Сборка матрицы системы
-
-         // Временной щаг
+         // Временной шаг
          double dt = time_grid[time_i] - time_grid[time_i - 1];
 
-         // Рачет матриц системы
+         // Расчет матриц системы
          int tr_size = slae.m.bot_tr.size();
          for(int i = 0; i < tr_size; i++)
             slae.m.bot_tr[i] = G.bot_tr[i] + M.bot_tr[i] / dt;
 
          slae.m.top_tr = slae.m.bot_tr;
+
          for(int i = 0; i < slae.m.size; i++)
             slae.m.di[i] = G.di[i] + M.di[i] / dt;
 
          // Расчет вектора правой части
          M.MatVecMult(q_1, vec_2);
 
+         AccountBound(t);
+
          for(int i = 0; i < slae.m.size; i++)
             slae.b[i] += vec_2[i] / dt;
-
-         AccountBound();
 
          slae.LUDecomp();
          slae.ForwardSolver();
          slae.BackwardSolver();
-         q_1 = q;
          q = slae.b;
+         q_1 = q;
 
-         fout << endl << "Time iteration " << time_i<< endl;
-         PrintSolution(fout);
+         fout << "t = " << fixed << t << endl;
+         PrintSolution(t, fout);
       }
 
 
       fout.close();
    }
 
-   // Вывод решения на основе вектора текущего приближения в поток fout
-   void PrintSolution(ofstream& fout)
+   // Вывод решения на основе вектора текущего приближения
+   // во временной точке t в поток fout
+   void PrintSolution(const double&t, ofstream& fout)
    {
       double norm = 0., norm_u = 0.;
 
@@ -469,7 +477,7 @@ public:
             fout << setw(11) << r->nodes[node_i];
             double help_1 = q[elem_beg_i];
             fout << setw(15) << help_1;
-            double help_2 = test.u_prec(r->nodes[node_i]);
+            double help_2 = test.u_prec(r->nodes[node_i], t);
             fout << setw(15) << help_2;
             fout << setw(14) << scientific << abs(help_1 - help_2) << fixed;
 
@@ -488,6 +496,6 @@ public:
          }
       }
       fout << "||u-u*||/||u*|| = " << scientific << sqrt(norm) / sqrt(norm_u) << endl;
-      fout << "||u-u*|| = " << scientific << sqrt(norm) << endl;
+      fout << "||u-u*|| = " << scientific << sqrt(norm) << endl << endl;
    }
 };
