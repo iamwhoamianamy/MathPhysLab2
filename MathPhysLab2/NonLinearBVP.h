@@ -19,8 +19,8 @@ public:
    int elems_count = 0;       // Общее количество конечных элементов
 
    double big_num = 1E+20;    // Большое число для учета первого краевого условия
-   vector<double> q_1;        // Приближение функции u на предыдущей итерации
-   vector<double> q;          // Приближение функции u на текущей итерации
+   vector<double> q_1;        // Приближение функции u на предыдущей итерации по времени
+   vector<double> q;          // Приближение функции u на текущей итерации по времени
 
    Matrix G, M;               // Матрицы жесткости и массы
    SLAE slae;                 // СЛАУ
@@ -294,14 +294,26 @@ public:
 
          if(r->left_bord == 1)
          {
-            slae.m.di[r->first_i] = big_num;
-            slae.b[r->first_i] = big_num * test.u_prec(r->nodes[0], t);
+            /*slae.m.di[r->first_i] = big_num;
+            slae.b[r->first_i] = big_num * test.u_prec(r->nodes[0], t);*/
+
+            slae.m.di[r->first_i] = 1.0;
+            slae.b[r->first_i] = test.u_prec(r->nodes[0], t);
+
+            slae.m.top_tr[slae.m.ind[r->first_i + 1]] = 0;
+            slae.m.top_tr[slae.m.ind[r->first_i + 2]] = 0;
          }
 
          if(r->right_bord == 1)
          {
-            slae.m.di[r->first_i + r->nodes_count - 1] = big_num;
-            slae.b[r->first_i + r->nodes_count - 1] = big_num * test.u_prec(r->nodes[r->nodes_count - 1], t);
+            /*slae.m.di[r->first_i + r->nodes_count - 1] = big_num;
+            slae.b[r->first_i + r->nodes_count - 1] = big_num * test.u_prec(r->nodes[r->nodes_count - 1], t);*/
+
+            slae.m.di[r->first_i + r->nodes_count - 1] = 1.0;
+            slae.b[r->first_i + r->nodes_count - 1] = test.u_prec(r->nodes[r->nodes_count - 1], t);
+
+            slae.m.bot_tr[slae.m.ind[r->first_i + r->nodes_count - 1]] = 0;
+            slae.m.bot_tr[slae.m.ind[r->first_i + r->nodes_count - 1] + 1] = 0;
          }
       }
    }
@@ -452,7 +464,6 @@ public:
          fout << "t = " << fixed << t << endl;
          PrintSolution(t, fout);
       }
-
 
       fout.close();
    }
