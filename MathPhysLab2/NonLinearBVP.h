@@ -28,10 +28,10 @@ public:
 
    vector<double> time_grid;  // Сетка по времени
 
-   vector<double> vec_1;     // Вспомогательный вектор для метода
+   vector<double> vec_1;      // Вспомогательный вектор для метода
                               // простой итерации
 
-   vector<double> vec_2;     // Вспомогательный вектор для явной схемы
+   vector<double> vec_2;      // Вспомогательный вектор для явной схемы
                               // по времени
 
    // Вспомогательная матрица для построения
@@ -275,10 +275,9 @@ public:
    {
       int tr_size = slae.m.bot_tr.size();
       for(int i = 0; i < tr_size; i++)
-      {
          slae.m.bot_tr[i] = G.bot_tr[i] + M.bot_tr[i];
-         slae.m.top_tr[i] = G.top_tr[i] + M.top_tr[i];
-      }
+
+      slae.m.top_tr = slae.m.bot_tr;
 
       for(int i = 0; i < slae.m.size; i++)
          slae.m.di[i] = G.di[i] + M.di[i];
@@ -305,7 +304,8 @@ public:
       }
    }
 
-   double CalcNorm(const vector<double>& vec)
+   // Функция расчета нормы вектора
+   static double CalcNorm(const vector<double>& vec)
    {
       double res = 0;
       int size = vec.size();
@@ -322,7 +322,6 @@ public:
       int n_iter = 0;
       double eps_residual = 1;
       double delta_residual = 1;
-      q_1 = q;
 
       do
       {
@@ -369,8 +368,6 @@ public:
             {
                break;
             }
-
-            q_1 = q;
             q = slae.b;
 
             fout << endl << "Non-linear iteration " << n_iter << endl;
@@ -385,7 +382,70 @@ public:
    {
       ofstream fout(file_name);
 
-      SimpleIterations(1e-14, 1e-14, 100, fout);
+      // Расчет вектора приближения при t=0
+      q_1.resize(nodes_count);
+      vec_2.resize(nodes_count);
+
+      int to_add_i = 0;
+      for(int reg_i = 0; reg_i < regions_count; reg_i++)
+      {
+         Region* r = &regions[reg_i];
+
+         for(int elem_i = 0; elem_i < r->elems_count; elem_i++)
+         {
+            q_1[to_add_i++] = test.u_prec(r->nodes[elem_i * 2]);
+            q_1[to_add_i++] = test.u_prec(r->nodes[elem_i * 2 + 1]);
+            q_1[to_add_i] = test.u_prec(r->nodes[elem_i * 2 + 2]);
+         }
+      }
+
+      for(int time_i = 1; time_i < time_grid.size(); time_i++)
+      {
+         // Решение нелинейности
+         SimpleIterations(1e-14, 1e-14, 100, fout);
+
+         // Инициализация матриц
+         InitMatrix(slae.m);
+         InitMatrix(G);
+         InitMatrix(M);
+         slae.b = vector<double>(slae.m.size);
+
+         // Сборка матриц жесткости и массы
+         FormPortrait();
+         FillMatrices();
+
+         // Сборка матрицы системы
+
+         // Временной щаг
+         double dt = time_grid[time_i] - time_grid[time_i - 1];
+
+         // Рачет матриц системы
+         int tr_size = slae.m.bot_tr.size();
+         for(int i = 0; i < tr_size; i++)
+            slae.m.bot_tr[i] = G.bot_tr[i] + M.bot_tr[i] / dt;
+
+         slae.m.top_tr = slae.m.bot_tr;
+         for(int i = 0; i < slae.m.size; i++)
+            slae.m.di[i] = G.di[i] + M.di[i] / dt;
+
+         // Расчет вектора правой части
+         M.MatVecMult(q_1, vec_2);
+
+         for(int i = 0; i < slae.m.size; i++)
+            slae.b[i] += vec_2[i] / dt;
+
+         AccountBound();
+
+         slae.LUDecomp();
+         slae.ForwardSolver();
+         slae.BackwardSolver();
+         q_1 = q;
+         q = slae.b;
+
+         fout << endl << "Time iteration " << time_i<< endl;
+         PrintSolution(fout);
+      }
+
 
       fout.close();
    }

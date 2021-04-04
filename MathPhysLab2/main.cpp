@@ -4,7 +4,7 @@
 int main()
 {
    NonLinearBVP nl = NonLinearBVP();
-   nl.test = Test(1, 1);
+   nl.test = Test(1, 0);
 
    nl.ReadFormGrid("regions.txt");
    nl.ReadFormtimeGrid("time.txt");
