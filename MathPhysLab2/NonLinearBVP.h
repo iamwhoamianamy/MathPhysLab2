@@ -172,12 +172,12 @@ public:
    }
 
    // Функция формирования портрета глобальной матрицы
-   void FormPortrait()
+   void FormPortrait(Matrix& m)
    {
-      slae.m.ind[0] = 0;
-      slae.m.ind[1] = 0;
-      slae.m.ind[2] = 1;
-      slae.m.ind[slae.m.size] = slae.m.top_tr.size();
+      m.ind[0] = 0;
+      m.ind[1] = 0;
+      m.ind[2] = 1;
+      m.ind[slae.m.size] = m.top_tr.size();
 
       int global_i = 3;
       int val = 3;
@@ -188,12 +188,12 @@ public:
 
          for(int elem_i = reg_i == 0 ? 1 : 0; elem_i < r->elems_count; elem_i++, global_i += 2, val += 2)
          {
-            slae.m.ind[global_i] = val++;
-            slae.m.ind[global_i + 1] = val;
+            m.ind[global_i] = val++;
+            m.ind[global_i + 1] = val;
          }
 
          if(reg_i + 1 < regions_count && grid[reg_i * 2 + 1] != grid[(reg_i + 1) * 2])
-            slae.m.ind[global_i++] = val;
+            m.ind[global_i++] = val;
       }
    }
 
@@ -223,9 +223,7 @@ public:
 
             vector<double> q_elem = { q[elem_beg_i_glob], q[elem_beg_i_glob + 1], q[elem_beg_i_glob + 2] };
 
-            vector<double> lambda = { test.lambda(q_elem[0]),
-                                      test.lambda(q_elem[1]),
-                                      test.lambda(q_elem[2]) };
+            vector<double> lambda = { test.lambda(q_elem[0]), test.lambda(q_elem[1]), test.lambda(q_elem[2]) };
 
             // Заполнение диагонали матрицы жесткости
             G.di[to_add_i_di++] += (lambda[0] * 37 / 30 + lambda[1] * 1.2 - lambda[2] * 0.1) / h;
@@ -250,20 +248,12 @@ public:
             M.bot_tr[to_add_i_tr++] += test.sigma() * h / 30.0 * C[2][0];
             M.bot_tr[to_add_i_tr++] += test.sigma() * h / 30.0 * C[2][1];
 
-            vector<double> f_elem = { test.f(x_elem[0], t),
-                                      test.f(x_elem[1], t),
-                                      test.f(x_elem[2], t) };
+            vector<double> f_elem = { test.f(x_elem[0], t), test.f(x_elem[1], t), test.f(x_elem[2], t) };
 
             // Заполнение вектора правой части
-            slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * f_elem[0] +
-                                                   C[0][1] * f_elem[1] +
-                                                   C[0][2] * f_elem[2]);
-            slae.b[to_add_i_di - 1] += h / 30.0 * (C[1][0] * f_elem[0] +
-                                                   C[1][1] * f_elem[1] +
-                                                   C[1][2] * f_elem[2]);
-            slae.b[to_add_i_di - 0] += h / 30.0 * (C[2][0] * f_elem[0] +
-                                                   C[2][1] * f_elem[1] +
-                                                   C[2][2] * f_elem[2]);
+            slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * f_elem[0] + C[0][1] * f_elem[1] + C[0][2] * f_elem[2]);
+            slae.b[to_add_i_di - 1] += h / 30.0 * (C[1][0] * f_elem[0] + C[1][1] * f_elem[1] + C[1][2] * f_elem[2]);
+            slae.b[to_add_i_di - 0] += h / 30.0 * (C[2][0] * f_elem[0] + C[2][1] * f_elem[1] + C[2][2] * f_elem[2]);
          }
       }
 
@@ -346,7 +336,9 @@ public:
          slae.b = vector<double>(slae.m.size);
 
          // Сборка матриц жесткости и массы
-         FormPortrait();
+         FormPortrait(slae.m);
+         FormPortrait(G);
+         FormPortrait(M);
          FillMatrices(t);
 
          // Сборка матрицы системы
@@ -398,7 +390,6 @@ public:
 
       // Расчет вектора приближения при t=0
       q_1.resize(nodes_count);
-      vec_2.resize(nodes_count);
 
       int to_add_i = 0;
       for(int reg_i = 0; reg_i < regions_count; reg_i++)
@@ -421,24 +412,24 @@ public:
          fout << endl;
          const double t = time_grid[time_i];
 
-         // Решение нелинейности
-         //SimpleIterations(t, 1e-14, 1e-14, 100, fout);
-
          // Инициализация матриц
          InitMatrix(slae.m);
          InitMatrix(G);
          InitMatrix(M);
          slae.b = vector<double>(slae.m.size);
+         vec_2 = vector<double>(slae.m.size);
 
          // Сборка матриц жесткости и массы
-         FormPortrait();
+         FormPortrait(slae.m);
+         FormPortrait(G);
+         FormPortrait(M);
          FillMatrices(t);
 
          // Временной шаг
-         double dt = time_grid[time_i] - time_grid[time_i - 1];
+         const double dt = t - time_grid[time_i - 1];
 
          // Расчет матриц системы
-         int tr_size = slae.m.bot_tr.size();
+         const int tr_size = slae.m.bot_tr.size();
          for(int i = 0; i < tr_size; i++)
             slae.m.bot_tr[i] = G.bot_tr[i] + M.bot_tr[i] / dt;
 
@@ -450,10 +441,10 @@ public:
          // Расчет вектора правой части
          M.MatVecMult(q_1, vec_2);
 
-         AccountBound(t);
-
          for(int i = 0; i < slae.m.size; i++)
             slae.b[i] += vec_2[i] / dt;
+
+         AccountBound(t);
 
          slae.LUDecomp();
          slae.ForwardSolver();
@@ -466,6 +457,77 @@ public:
       }
 
       fout.close();
+   }
+
+   void StrangeTest()
+   {
+      double dt = 1;
+
+      // Расчет вектора приближения при t=0
+      vector<double> u1(nodes_count);
+
+      int to_add_i = 0;
+      for(int reg_i = 0; reg_i < regions_count; reg_i++)
+      {
+         Region* r = &regions[reg_i];
+
+         for(int elem_i = 0; elem_i < r->elems_count; elem_i++)
+         {
+            u1[to_add_i++] = test.u_prec(r->nodes[elem_i * 2], 0.0);
+            u1[to_add_i++] = test.u_prec(r->nodes[elem_i * 2 + 1], 0.0);
+            u1[to_add_i] = test.u_prec(r->nodes[elem_i * 2 + 2], 0.0);
+         }
+      }
+
+      // Расчет вектора приближения при t=1
+      vector<double> u(nodes_count);
+
+      to_add_i = 0;
+      for(int reg_i = 0; reg_i < regions_count; reg_i++)
+      {
+         Region* r = &regions[reg_i];
+
+         for(int elem_i = 0; elem_i < r->elems_count; elem_i++)
+         {
+            u[to_add_i++] = test.u_prec(r->nodes[elem_i * 2], dt);
+            u[to_add_i++] = test.u_prec(r->nodes[elem_i * 2 + 1], dt);
+            u[to_add_i] = test.u_prec(r->nodes[elem_i * 2 + 2], dt);
+         }
+      }
+
+      vector<double> Mu(nodes_count);
+      vector<double> Gu(nodes_count);
+      vector<double> Mu1(nodes_count);
+
+      vector<double> left(nodes_count);
+      vector<double> right(nodes_count);
+
+      // Инициализация матриц
+      InitMatrix(slae.m);
+      InitMatrix(G);
+      InitMatrix(M);
+      slae.b = vector<double>(slae.m.size);
+
+      // Сборка матриц жесткости и массы
+      FormPortrait(slae.m);
+      FormPortrait(G);
+      FormPortrait(M);
+      FillMatrices(dt);
+
+      M.MatVecMult(u, Mu);
+      G.MatVecMult(u, Gu);
+      M.MatVecMult(u1, Mu1);
+
+      for(int i = 0; i < nodes_count; i++)
+      {
+         left[i] = 1 / dt * Mu[i] - 1 / dt * Mu1[i] + Gu[i];
+         right[i] = slae.b[i];
+      }
+
+
+
+
+      int aasd;
    }
 
    // Вывод решения на основе вектора текущего приближения
