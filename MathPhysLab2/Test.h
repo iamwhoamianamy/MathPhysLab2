@@ -57,7 +57,7 @@ public:
       switch(N)
       {
          case(0): return 2.0;
-         case(1): return t * x + 1;
+         case(1): return 5 * x + 2 * t;
          case(2): return x * x;
          case(3): return x * x * x;
          case(4): return x * x * x * x;
@@ -70,7 +70,7 @@ public:
       switch(N)
       {
          case(0): return 0;
-         case(1): return t;
+         case(1): return 5;
          case(2): return 2 * x;
          case(3): return 3 * x * x;
          case(4): return 4 * x * x * x;
@@ -96,7 +96,7 @@ public:
       switch(N)
       {
          case(0): return 0;
-         case(1): return x;
+         case(1): return 2;
          case(2): return 0;
          case(3): return 0;
          case(4): return 0;
