@@ -345,21 +345,21 @@ public:
          GlobalMatrixAssemble();
          AccountBound(t);
 
-         /*vec_1 = vector<double>(nodes_count);
+         vec_1 = vector<double>(nodes_count);
          slae.m.MatVecMult(q, vec_1);
 
          for(int i = 0; i < nodes_count; i++)
             vec_1[i] -= slae.b[i];
 
-         eps_residual = CalcNorm(vec_1) / CalcNorm(slae.b) / big_num;
+         eps_residual = CalcNorm(vec_1) / CalcNorm(slae.b);
 
          if(eps_residual < eps)
          {
             fout << endl << "Non-linear iteration " << n_iter << endl;
-            PrintSolution(fout);
+            PrintSolution(t, fout);
             break;
          }
-         else*/
+         else
          {
             slae.LUDecomp();
             slae.ForwardSolver();

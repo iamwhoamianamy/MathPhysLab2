@@ -14,7 +14,7 @@ public:
 
    double f(const double& x, const double& t)
    {
-      return -1 * (dudx(x, t) * dlambdadx(x) + d2udx2(x, t) * lambda(u_prec(x, t))) + sigma() * dudt(x, t);
+      return -1 * (dudx(x, t) * dlambdadx(x, t) + d2udx2(x, t) * lambda(u_prec(x, t))) + sigma() * dudt(x, t);
    }
 
    double lambda(const double& u)
@@ -22,12 +22,12 @@ public:
       switch(M)
       {
          case 0: return 1;
-         case 1: return 3 * u * u + 1;;
+         case 1: return 3 * u * u + 1;
       }
    }
 
    // Производная lambda по x после подстановки x в функцию u
-   double dlambdadx(const double& x)
+   double dlambdadx(const double& x, const double& t)
    {
       switch(M)
       {
@@ -37,7 +37,7 @@ public:
             switch(N)
             {
                case(0): return 2.0;
-               case(1): return 150 * x;
+               case(1): return 150 * x + 60 * t;
                case(2): return 12 * x * x * x;
                case(3): return 18 * x * x * x * x * x;
                case(4): return 24 * pow(x, 7);
@@ -48,7 +48,7 @@ public:
 
    double sigma()
    {
-      return 1;
+      return 0;
    }
 
    // Точное решение
