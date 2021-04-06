@@ -10,13 +10,12 @@ int main()
    nl.ReadFormtimeGrid("time.txt");
 
    // ДЛЯ НЕЛИНЕЙНОСТИ
-   ofstream fout("result.txt");
-   nl.SimpleIterations(0.0, 1e-14, 1e-14, 100, fout);
-   fout.close();
+   //ofstream fout("result.txt");
+   //nl.SimpleIterations(0.0, 1e-14, 1e-14, 100, fout);
+   //fout.close();
 
    // ДЛЯ НЕСТАЦИОНАРНОСТИ
-   //nl.ExplicitScheme("result.txt");
-   //nl.StrangeTest();
+   nl.ExplicitScheme(1e-14, 1e-14, 100, "result.txt");
 
    int asd = 1111;
 }

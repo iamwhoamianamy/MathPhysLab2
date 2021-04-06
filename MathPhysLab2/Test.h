@@ -36,7 +36,7 @@ public:
          {
             switch(N)
             {
-               case(0): return 2.0;
+               case(0): return 0;
                case(1): return 150 * x + 60 * t;
                case(2): return 12 * x * x * x;
                case(3): return 18 * x * x * x * x * x;
@@ -48,7 +48,7 @@ public:
 
    double sigma()
    {
-      return 0;
+      return 1;
    }
 
    // Точное решение

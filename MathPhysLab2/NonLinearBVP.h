@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 #include <vector>
 #include <fstream>
 #include <iomanip>
@@ -11,31 +11,33 @@ using namespace std;
 class NonLinearBVP
 {
 public:
-   vector<Region> regions;    // Регионы расчетной области
-   vector<double> grid;       // Исходная сетка
+   vector<Region> regions;    // Р РµРіРёРѕРЅС‹ СЂР°СЃС‡РµС‚РЅРѕР№ РѕР±Р»Р°СЃС‚Рё
+   vector<double> grid;       // РСЃС…РѕРґРЅР°СЏ СЃРµС‚РєР°
 
-   int regions_count = 0;     // Количество регионов
-   int nodes_count = 0;       // Общее количество узлов
-   int elems_count = 0;       // Общее количество конечных элементов
+   int regions_count = 0;     // РљРѕР»РёС‡РµСЃС‚РІРѕ СЂРµРіРёРѕРЅРѕРІ
+   int nodes_count = 0;       // РћР±С‰РµРµ РєРѕР»РёС‡РµСЃС‚РІРѕ СѓР·Р»РѕРІ
+   int elems_count = 0;       // РћР±С‰РµРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РєРѕРЅРµС‡РЅС‹С… СЌР»РµРјРµРЅС‚РѕРІ
 
-   double big_num = 1E+20;    // Большое число для учета первого краевого условия
-   vector<double> q_1;        // Приближение функции u на предыдущей итерации по времени
-   vector<double> q;          // Приближение функции u на текущей итерации по времени
+   double big_num = 1E+20;    // Р‘РѕР»СЊС€РѕРµ С‡РёСЃР»Рѕ РґР»СЏ СѓС‡РµС‚Р° РїРµСЂРІРѕРіРѕ РєСЂР°РµРІРѕРіРѕ СѓСЃР»РѕРІРёСЏ
+   vector<double> q_1;        // РџСЂРёР±Р»РёР¶РµРЅРёРµ С„СѓРЅРєС†РёРё u РЅР° РїСЂРµРґС‹РґСѓС‰РµР№ РёС‚РµСЂР°С†РёРё РїРѕ РІСЂРµРјРµРЅРё
+   vector<double> q;          // РџСЂРёР±Р»РёР¶РµРЅРёРµ С„СѓРЅРєС†РёРё u РЅР° С‚РµРєСѓС‰РµР№ РёС‚РµСЂР°С†РёРё РїРѕ РІСЂРµРјРµРЅРё
+   //vector<double> u_1;        // РџСЂРёР±Р»РёР¶РµРЅРёРµ С„СѓРЅРєС†РёРё u РїРѕ РЅРµР»РёРЅРµР№РЅРѕСЃС‚Рё РЅР° РїСЂРµРґС‹РґСѓС‰РµР№ РёС‚РµСЂР°С†РёРё
+   vector<double> u;          // РџСЂРёР±Р»РёР¶РµРЅРёРµ С„СѓРЅРєС†РёРё u РїРѕ РЅРµР»РёРЅРµР№РЅРѕСЃС‚Рё РЅР° С‚РµРєСѓС‰РµР№ РёС‚РµСЂР°С†РёРё
 
-   Matrix G, M;               // Матрицы жесткости и массы
-   SLAE slae;                 // СЛАУ
-   Test test;                 // Тестовая информация
+   Matrix G, M;               // РњР°С‚СЂРёС†С‹ Р¶РµСЃС‚РєРѕСЃС‚Рё Рё РјР°СЃСЃС‹
+   SLAE slae;                 // РЎР›РђРЈ
+   Test test;                 // РўРµСЃС‚РѕРІР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ
 
-   vector<double> time_grid;  // Сетка по времени
+   vector<double> time_grid;  // РЎРµС‚РєР° РїРѕ РІСЂРµРјРµРЅРё
 
-   vector<double> vec_1;      // Вспомогательный вектор для метода
-                              // простой итерации
+   vector<double> vec_1;         // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Р№ РІРµРєС‚РѕСЂ РґР»СЏ РјРµС‚РѕРґР°
+                              // РїСЂРѕСЃС‚РѕР№ РёС‚РµСЂР°С†РёРё
 
-   vector<double> vec_2;      // Вспомогательный вектор для явной схемы
-                              // по времени
+   vector<double> vec_2;      // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Р№ РІРµРєС‚РѕСЂ РґР»СЏ СЏРІРЅРѕР№ СЃС…РµРјС‹
+                              // РїРѕ РІСЂРµРјРµРЅРё
 
-   // Вспомогательная матрица для построения
-   // матрицы массы конечного элемента
+   // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅР°СЏ РјР°С‚СЂРёС†Р° РґР»СЏ РїРѕСЃС‚СЂРѕРµРЅРёСЏ
+   // РјР°С‚СЂРёС†С‹ РјР°СЃСЃС‹ РєРѕРЅРµС‡РЅРѕРіРѕ СЌР»РµРјРµРЅС‚Р°
    vector<vector<int>> C;
 
    NonLinearBVP()
@@ -47,8 +49,8 @@ public:
       };
    }
 
-   // Функция считывания областей из файла file_name
-   // и формирования сетки
+   // Р¤СѓРЅРєС†РёСЏ СЃС‡РёС‚С‹РІР°РЅРёСЏ РѕР±Р»Р°СЃС‚РµР№ РёР· С„Р°Р№Р»Р° file_name
+   // Рё С„РѕСЂРјРёСЂРѕРІР°РЅРёСЏ СЃРµС‚РєРё
    void ReadFormGrid(const string& file_name)
    {
       ifstream fin(file_name);
@@ -68,11 +70,11 @@ public:
 
          int left, right;
 
-         // Считывание границы области
+         // РЎС‡РёС‚С‹РІР°РЅРёРµ РіСЂР°РЅРёС†С‹ РѕР±Р»Р°СЃС‚Рё
          fin >> left;
          fin >> right;
 
-         // Генерация координат узлов по X
+         // Р“РµРЅРµСЂР°С†РёСЏ РєРѕРѕСЂРґРёРЅР°С‚ СѓР·Р»РѕРІ РїРѕ X
          int n;
          double h, q;
 
@@ -93,7 +95,7 @@ public:
          for(int i = 0; i < n; i++)
             r->nodes[i + 1] = r->nodes[i] + h * pow(q, i);
 
-         // Считывание информации о краевых условиях
+         // РЎС‡РёС‚С‹РІР°РЅРёРµ РёРЅС„РѕСЂРјР°С†РёРё Рѕ РєСЂР°РµРІС‹С… СѓСЃР»РѕРІРёСЏС…
          fin >> r->left_bord;
          fin >> r->right_bord;
 
@@ -112,6 +114,9 @@ public:
       fin.close();
 
       q.resize(nodes_count, 0);
+      q_1.resize(nodes_count, 0);
+      u.resize(nodes_count, 0);
+      //u_1.resize(nodes_count, 0);
 
       /*for(int i = 0; i < nodes_count; i++)
          q[i] = pow(11 + 0.25 * (i), 2) ;*/
@@ -119,8 +124,8 @@ public:
       vec_1.resize(nodes_count);
    }
 
-   // Функция считывания и формирования сетки по времени
-   // из файла file_name
+   // Р¤СѓРЅРєС†РёСЏ СЃС‡РёС‚С‹РІР°РЅРёСЏ Рё С„РѕСЂРјРёСЂРѕРІР°РЅРёСЏ СЃРµС‚РєРё РїРѕ РІСЂРµРјРµРЅРё
+   // РёР· С„Р°Р№Р»Р° file_name
    void ReadFormtimeGrid(const string& file_name)
    {
       ifstream fin(file_name);
@@ -130,7 +135,7 @@ public:
       fin >> t0;
       fin >> tn;
 
-      // Генерация координат узлов по X
+      // Р“РµРЅРµСЂР°С†РёСЏ РєРѕРѕСЂРґРёРЅР°С‚ СѓР·Р»РѕРІ РїРѕ X
       int n;
       double h, q;
 
@@ -152,7 +157,7 @@ public:
       fin.close();
    }
 
-   // Функция инициализации матрицы
+   // Р¤СѓРЅРєС†РёСЏ РёРЅРёС†РёР°Р»РёР·Р°С†РёРё РјР°С‚СЂРёС†С‹
    void InitMatrix(Matrix& m)
    {
       m.size = 0;
@@ -171,7 +176,7 @@ public:
       m.ind = vector<int>(m.size + 1);
    }
 
-   // Функция формирования портрета глобальной матрицы
+   // Р¤СѓРЅРєС†РёСЏ С„РѕСЂРјРёСЂРѕРІР°РЅРёСЏ РїРѕСЂС‚СЂРµС‚Р° РіР»РѕР±Р°Р»СЊРЅРѕР№ РјР°С‚СЂРёС†С‹
    void FormPortrait(Matrix& m)
    {
       m.ind[0] = 0;
@@ -197,12 +202,12 @@ public:
       }
    }
 
-   // Функция заполнения матриц жесткости и массы
+   // Р¤СѓРЅРєС†РёСЏ Р·Р°РїРѕР»РЅРµРЅРёСЏ РјР°С‚СЂРёС† Р¶РµСЃС‚РєРѕСЃС‚Рё Рё РјР°СЃСЃС‹
    void FillMatrices(const double& t)
    {
-      // Индекс очередного элемента в треугольнике матрицы
+      // РРЅРґРµРєСЃ РѕС‡РµСЂРµРґРЅРѕРіРѕ СЌР»РµРјРµРЅС‚Р° РІ С‚СЂРµСѓРіРѕР»СЊРЅРёРєРµ РјР°С‚СЂРёС†С‹
       int to_add_i_tr = 0;
-      // Индекс очередного элемента на диагонали матрицы
+      // РРЅРґРµРєСЃ РѕС‡РµСЂРµРґРЅРѕРіРѕ СЌР»РµРјРµРЅС‚Р° РЅР° РґРёР°РіРѕРЅР°Р»Рё РјР°С‚СЂРёС†С‹
       int to_add_i_di = 0;
 
       for(int reg_i = 0; reg_i < regions_count; reg_i++)
@@ -211,26 +216,26 @@ public:
 
          for(int elem_i = 0; elem_i < r->elems_count; elem_i++)
          {
-            // Индекс первого узла элемента
+            // РРЅРґРµРєСЃ РїРµСЂРІРѕРіРѕ СѓР·Р»Р° СЌР»РµРјРµРЅС‚Р°
             int elem_beg_i = elem_i * 2;
 
-            // Координаты узлов
+            // РљРѕРѕСЂРґРёРЅР°С‚С‹ СѓР·Р»РѕРІ
             vector<double> x_elem = { r->nodes[elem_beg_i], r->nodes[elem_beg_i + 1], r->nodes[elem_beg_i + 2] };
             double h = x_elem[2] - x_elem[0];
 
-            // Индекс первого узла элемента в глобальной нумерации
+            // РРЅРґРµРєСЃ РїРµСЂРІРѕРіРѕ СѓР·Р»Р° СЌР»РµРјРµРЅС‚Р° РІ РіР»РѕР±Р°Р»СЊРЅРѕР№ РЅСѓРјРµСЂР°С†РёРё
             int elem_beg_i_glob = elem_i * 2 + r->first_i;
 
-            vector<double> q_elem = { q[elem_beg_i_glob], q[elem_beg_i_glob + 1], q[elem_beg_i_glob + 2] };
+            vector<double> q_elem = { u[elem_beg_i_glob], u[elem_beg_i_glob + 1], u[elem_beg_i_glob + 2] };
 
             vector<double> lambda = { test.lambda(q_elem[0]), test.lambda(q_elem[1]), test.lambda(q_elem[2]) };
 
-            // Заполнение диагонали матрицы жесткости
+            // Р—Р°РїРѕР»РЅРµРЅРёРµ РґРёР°РіРѕРЅР°Р»Рё РјР°С‚СЂРёС†С‹ Р¶РµСЃС‚РєРѕСЃС‚Рё
             G.di[to_add_i_di++] += (lambda[0] * 37 / 30 + lambda[1] * 1.2 - lambda[2] * 0.1) / h;
             G.di[to_add_i_di++] += (lambda[0] * 1.6 + lambda[1] * 32 / 15 + lambda[2] * 1.6) / h;
             G.di[to_add_i_di]   += (-lambda[0] * 0.1 + lambda[1] * 1.2 + lambda[2] * 37 / 30) / h;
 
-            // Заполнение нижнего треугольника матрицы жесткости
+            // Р—Р°РїРѕР»РЅРµРЅРёРµ РЅРёР¶РЅРµРіРѕ С‚СЂРµСѓРіРѕР»СЊРЅРёРєР° РјР°С‚СЂРёС†С‹ Р¶РµСЃС‚РєРѕСЃС‚Рё
             G.bot_tr[to_add_i_tr++] += (-lambda[0] * 22 / 15 - lambda[1] * 16 / 15 - lambda[2] * 2 / 15) / h;
             G.bot_tr[to_add_i_tr++] += (lambda[0] * 7 / 30 - lambda[1] * 2 / 15 + lambda[2] * 7 / 30) / h;
             G.bot_tr[to_add_i_tr++] += (-lambda[0] * 2 / 15 - lambda[1] * 16 / 15 - lambda[2] * 22 / 15) / h;
@@ -238,31 +243,31 @@ public:
             to_add_i_di -= 2;
             to_add_i_tr -= 3;
 
-            // Заполнение диагонали матрицы массы
+            // Р—Р°РїРѕР»РЅРµРЅРёРµ РґРёР°РіРѕРЅР°Р»Рё РјР°С‚СЂРёС†С‹ РјР°СЃСЃС‹
             M.di[to_add_i_di++] += test.sigma() * h / 30.0 * C[0][0];
             M.di[to_add_i_di++] += test.sigma() * h / 30.0 * C[1][1];
             M.di[to_add_i_di]   += test.sigma() * h / 30.0 * C[2][2];
 
-            // Заполнение нижнего треугольника массы
+            // Р—Р°РїРѕР»РЅРµРЅРёРµ РЅРёР¶РЅРµРіРѕ С‚СЂРµСѓРіРѕР»СЊРЅРёРєР° РјР°СЃСЃС‹
             M.bot_tr[to_add_i_tr++] += test.sigma() * h / 30.0 * C[1][0];
             M.bot_tr[to_add_i_tr++] += test.sigma() * h / 30.0 * C[2][0];
             M.bot_tr[to_add_i_tr++] += test.sigma() * h / 30.0 * C[2][1];
 
             vector<double> f_elem = { test.f(x_elem[0], t), test.f(x_elem[1], t), test.f(x_elem[2], t) };
 
-            // Заполнение вектора правой части
+            // Р—Р°РїРѕР»РЅРµРЅРёРµ РІРµРєС‚РѕСЂР° РїСЂР°РІРѕР№ С‡Р°СЃС‚Рё
             slae.b[to_add_i_di - 2] += h / 30.0 * (C[0][0] * f_elem[0] + C[0][1] * f_elem[1] + C[0][2] * f_elem[2]);
             slae.b[to_add_i_di - 1] += h / 30.0 * (C[1][0] * f_elem[0] + C[1][1] * f_elem[1] + C[1][2] * f_elem[2]);
             slae.b[to_add_i_di - 0] += h / 30.0 * (C[2][0] * f_elem[0] + C[2][1] * f_elem[1] + C[2][2] * f_elem[2]);
          }
       }
 
-      // Заполнение верхних треуголников
+      // Р—Р°РїРѕР»РЅРµРЅРёРµ РІРµСЂС…РЅРёС… С‚СЂРµСѓРіРѕР»РЅРёРєРѕРІ
       G.top_tr = G.bot_tr;
       M.top_tr = M.bot_tr;
    }
    
-   // Функция сбора глобальной матрицы системы
+   // Р¤СѓРЅРєС†РёСЏ СЃР±РѕСЂР° РіР»РѕР±Р°Р»СЊРЅРѕР№ РјР°С‚СЂРёС†С‹ СЃРёСЃС‚РµРјС‹
    void GlobalMatrixAssemble()
    {
       int tr_size = slae.m.bot_tr.size();
@@ -275,7 +280,7 @@ public:
          slae.m.di[i] = G.di[i] + M.di[i];
    }
 
-   // Функция учета краевых условий
+   // Р¤СѓРЅРєС†РёСЏ СѓС‡РµС‚Р° РєСЂР°РµРІС‹С… СѓСЃР»РѕРІРёР№
    void AccountBound(const double& t)
    {
       for(int reg_i = 0; reg_i < regions_count; reg_i++)
@@ -308,7 +313,7 @@ public:
       }
    }
 
-   // Функция расчета нормы вектора
+   // Р¤СѓРЅРєС†РёСЏ СЂР°СЃС‡РµС‚Р° РЅРѕСЂРјС‹ РІРµРєС‚РѕСЂР°
    static double CalcNorm(const vector<double>& vec)
    {
       double res = 0;
@@ -320,7 +325,7 @@ public:
       return sqrt(res);
    }
 
-   // Линеаризация методом простой итераций, вывод итераций в файл file_name
+   // Р›РёРЅРµР°СЂРёР·Р°С†РёСЏ РјРµС‚РѕРґРѕРј РїСЂРѕСЃС‚РѕР№ РёС‚РµСЂР°С†РёР№, РІС‹РІРѕРґ РёС‚РµСЂР°С†РёР№ РІ С„Р°Р№Р» file_name
    void SimpleIterations(const double& t, const double& eps, const double& delta, const int& max_iter, ofstream& fout)
    {
       int n_iter = 0;
@@ -329,24 +334,24 @@ public:
 
       do
       {
-         // Инициализация матриц
+         // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РјР°С‚СЂРёС†
          InitMatrix(slae.m);
          InitMatrix(G);
          InitMatrix(M);
          slae.b = vector<double>(slae.m.size);
 
-         // Сборка матриц жесткости и массы
+         // РЎР±РѕСЂРєР° РјР°С‚СЂРёС† Р¶РµСЃС‚РєРѕСЃС‚Рё Рё РјР°СЃСЃС‹
          FormPortrait(slae.m);
          FormPortrait(G);
          FormPortrait(M);
          FillMatrices(t);
 
-         // Сборка матрицы системы
+         // РЎР±РѕСЂРєР° РјР°С‚СЂРёС†С‹ СЃРёСЃС‚РµРјС‹
          GlobalMatrixAssemble();
          AccountBound(t);
 
          vec_1 = vector<double>(nodes_count);
-         slae.m.MatVecMult(q, vec_1);
+         slae.m.MatVecMult(u, vec_1);
 
          for(int i = 0; i < nodes_count; i++)
             vec_1[i] -= slae.b[i];
@@ -355,8 +360,6 @@ public:
 
          if(eps_residual < eps)
          {
-            fout << endl << "Non-linear iteration " << n_iter << endl;
-            PrintSolution(t, fout);
             break;
          }
          else
@@ -366,7 +369,7 @@ public:
             slae.BackwardSolver();
 
             for(int i = 0; i < nodes_count; i++)
-               vec_1[i] = slae.b[i] - q[i];
+               vec_1[i] = slae.b[i] - u[i];
 
             delta_residual = CalcNorm(vec_1) / CalcNorm(slae.b);
 
@@ -374,21 +377,22 @@ public:
             {
                break;
             }
-            q = slae.b;
+
+            u = slae.b;
 
             fout << endl << "Non-linear iteration " << n_iter << endl;
-            PrintSolution(t, fout);
+            PrintSolution(u, t, fout);
             n_iter++;
          }
       } while(0 < n_iter && n_iter <  max_iter);
    }
 
-   // Явная разностная схема по времени, вывод итераций в поток fout
-   void ExplicitScheme(const string& file_name)
+   // РЇРІРЅР°СЏ СЂР°Р·РЅРѕСЃС‚РЅР°СЏ СЃС…РµРјР° РїРѕ РІСЂРµРјРµРЅРё, РІС‹РІРѕРґ РёС‚РµСЂР°С†РёР№ РІ РїРѕС‚РѕРє fout
+   void ExplicitScheme(const double& eps, const double& delta, const int& max_iter, const string& file_name)
    {
       ofstream fout(file_name);
 
-      // Расчет вектора приближения при t=0
+      // Р Р°СЃС‡РµС‚ РІРµРєС‚РѕСЂР° РїСЂРёР±Р»РёР¶РµРЅРёСЏ РїСЂРё t=0
       q_1.resize(nodes_count);
 
       int to_add_i = 0;
@@ -408,60 +412,99 @@ public:
       {
          for(int i = 0; i < 100; i++)
             fout << "#";
-
          fout << endl;
+
          const double t = time_grid[time_i];
-
-         // Инициализация матриц
-         InitMatrix(slae.m);
-         InitMatrix(G);
-         InitMatrix(M);
-         slae.b = vector<double>(slae.m.size);
-         vec_2 = vector<double>(slae.m.size);
-
-         // Сборка матриц жесткости и массы
-         FormPortrait(slae.m);
-         FormPortrait(G);
-         FormPortrait(M);
-         FillMatrices(t);
-
-         // Временной шаг
          const double dt = t - time_grid[time_i - 1];
 
-         // Расчет матриц системы
-         const int tr_size = slae.m.bot_tr.size();
-         for(int i = 0; i < tr_size; i++)
-            slae.m.bot_tr[i] = G.bot_tr[i] + M.bot_tr[i] / dt;
+         fout << "t = " << fixed << t << endl;
 
-         slae.m.top_tr = slae.m.bot_tr;
+         int n_iter = 0;
+         double eps_residual = 1;
+         double delta_residual = 1;
 
-         for(int i = 0; i < slae.m.size; i++)
-            slae.m.di[i] = G.di[i] + M.di[i] / dt;
+         do
+         {
+            // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РјР°С‚СЂРёС†
+            InitMatrix(slae.m);
+            InitMatrix(G);
+            InitMatrix(M);
+            slae.b = vector<double>(slae.m.size);
+            vec_2 = vector<double>(slae.m.size);
 
-         // Расчет вектора правой части
-         M.MatVecMult(q_1, vec_2);
+            // РЎР±РѕСЂРєР° РјР°С‚СЂРёС† Р¶РµСЃС‚РєРѕСЃС‚Рё Рё РјР°СЃСЃС‹
+            FormPortrait(slae.m);
+            FormPortrait(G);
+            FormPortrait(M);
+            FillMatrices(t);
 
-         for(int i = 0; i < slae.m.size; i++)
-            slae.b[i] += vec_2[i] / dt;
+            // РЎР±РѕСЂРєР° РјР°С‚СЂРёС†С‹ СЃРёСЃС‚РµРјС‹
+            const int tr_size = slae.m.bot_tr.size();
+            for(int i = 0; i < tr_size; i++)
+               slae.m.bot_tr[i] = G.bot_tr[i] + M.bot_tr[i] / dt;
 
-         AccountBound(t);
+            slae.m.top_tr = slae.m.bot_tr;
 
-         slae.LUDecomp();
-         slae.ForwardSolver();
-         slae.BackwardSolver();
-         q = slae.b;
+            for(int i = 0; i < slae.m.size; i++)
+               slae.m.di[i] = G.di[i] + M.di[i] / dt;
+
+            // ГђГ Г±Г·ГҐГІ ГўГҐГЄГІГ®Г°Г  ГЇГ°Г ГўГ®Г© Г·Г Г±ГІГЁ
+            M.MatVecMult(q_1, vec_2);
+
+            for(int i = 0; i < slae.m.size; i++)
+               slae.b[i] += vec_2[i] / dt;
+
+            AccountBound(t);
+
+            vec_1 = vector<double>(nodes_count);
+            slae.m.MatVecMult(u, vec_1);
+
+            for(int i = 0; i < nodes_count; i++)
+               vec_1[i] -= slae.b[i];
+
+            eps_residual = CalcNorm(vec_1) / CalcNorm(slae.b);
+
+            if(eps_residual < eps)
+            {
+               break;
+            }
+            else
+            {
+               slae.LUDecomp();
+               slae.ForwardSolver();
+               slae.BackwardSolver();
+
+               for(int i = 0; i < nodes_count; i++)
+                  vec_1[i] = slae.b[i] - u[i];
+
+               delta_residual = CalcNorm(vec_1) / CalcNorm(slae.b);
+
+               if(delta_residual < delta)
+               {
+                  break;
+               }
+
+               u = slae.b;
+
+               fout << endl << "Non-linear iteration " << n_iter << endl;
+               PrintSolution(u, t, fout);
+               n_iter++;
+            }
+         } while(0 < n_iter && n_iter < max_iter);
+
+         q = u;
          q_1 = q;
 
-         fout << "t = " << fixed << t << endl;
-         PrintSolution(t, fout);
+         fout << "Final result on timestep:" << endl;
+         PrintSolution(q, t, fout);
       }
 
       fout.close();
    }
 
-   // Вывод решения на основе вектора текущего приближения
-   // во временной точке t в поток fout
-   void PrintSolution(const double&t, ofstream& fout)
+   // Р’С‹РІРѕРґ СЂРµС€РµРЅРёСЏ РЅР° РѕСЃРЅРѕРІРµ РІРµРєС‚РѕСЂР° С‚РµРєСѓС‰РµРіРѕ РїСЂРёР±Р»РёР¶РµРЅРёСЏ solution
+   // РІРѕ РІСЂРµРјРµРЅРЅРѕР№ С‚РѕС‡РєРµ t РІ РїРѕС‚РѕРє fout
+   void PrintSolution(const vector<double>& solution, const double& t, ofstream& fout)
    {
       double norm = 0., norm_u = 0.;
 
@@ -473,11 +516,11 @@ public:
 
          for(int node_i = 0; node_i < r->nodes_count; node_i++)
          {
-            // Индекс узла в глобальной нумерации
+            // РРЅРґРµРєСЃ СѓР·Р»Р° РІ РіР»РѕР±Р°Р»СЊРЅРѕР№ РЅСѓРјРµСЂР°С†РёРё
             int elem_beg_i = node_i + r->first_i;
 
             fout << setw(11) << r->nodes[node_i];
-            double help_1 = q[elem_beg_i];
+            double help_1 = solution[elem_beg_i];
             fout << setw(15) << help_1;
             double help_2 = test.u_prec(r->nodes[node_i], t);
             fout << setw(15) << help_2;
