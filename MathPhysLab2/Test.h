@@ -14,15 +14,23 @@ public:
 
    double f(const double& x, const double& t)
    {
-      return -1 * (dudx(x, t) * dlambdadx(x, t) + d2udx2(x, t) * lambda(u_prec(x, t))) + sigma() * dudt(x, t);
+      return -1 * (dudx(x, t) * dlambdadx(x, t) + d2udx2(x, t) * lambda(u_prec(x, t), x, t)) + sigma() * dudt(x, t);
    }
 
-   double lambda(const double& u)
+   double sigma()
+   {
+      return 1;
+   }
+
+   double lambda(const double& u, const double& x, const double& t)
    {
       switch(M)
       {
          case 0: return 1;
-         case 1: return 3 * u * u + 1;
+         //case 1: return u * u + 1;
+         case 1: return x * x + 1;
+         //case 1: return u + 1;
+         //case 1: return u + t * x;
       }
    }
 
@@ -37,18 +45,23 @@ public:
             switch(N)
             {
                case(0): return 0;
-               case(1): return 150 * x + 60 * t;
-               case(2): return 12 * x * x * x;
-               case(3): return 18 * x * x * x * x * x;
-               case(4): return 24 * pow(x, 7);
+               //case(1): return 1;
+               case(1): return 2 * x;
+               //case(1): return 1 + t;
+               //case(2): return t;
+               case(2): return 2 * x * t * t;
+               //case(3): return 2 * x;
+               case(3): return 4 * x * x * x;
+               case(4): return 3 * x * x;
+               //case(4): return 2 * x + 1;
+               case(5): return 4 * x * x * x;
+               case(6): return 0;
+               //case(7): return 2 * x * t * t;
+               case(7): return 0;
+               case(8): return  2 * x * t;
             }
          }
       }
-   }
-
-   double sigma()
-   {
-      return 1;
    }
 
    // Точное решение
@@ -57,10 +70,15 @@ public:
       switch(N)
       {
          case(0): return 2.0;
-         case(1): return 5 * x + 2 * t;
-         case(2): return x * x;
-         case(3): return x * x * x;
-         case(4): return x * x * x * x;
+         case(1): return x;
+         case(2): return x * t;
+         case(3): return x * x;
+         case(4): return x * x * x;
+         case(5): return x * x * x * x;
+         //case(5): return x * x * x * x * t;
+         case(6): return t;
+         case(7): return t * t;
+         case(8): return x * x * t;
       };
    }
 
@@ -69,11 +87,13 @@ public:
    {
       switch(N)
       {
-         case(0): return 0;
-         case(1): return 5;
-         case(2): return 2 * x;
-         case(3): return 3 * x * x;
-         case(4): return 4 * x * x * x;
+         case(1): return 1;
+         case(2): return t;
+         case(3): return 2 * x;
+         case(4): return 3 * x * x;
+         case(5): return 4 * x * x * x;
+         case(8): return 2 * x * t;
+         default: return 0;
       };
    }
 
@@ -82,11 +102,11 @@ public:
    {
       switch(N)
       {
-         case(0): return 0;
-         case(1): return 0;
-         case(2): return 2;
-         case(3): return 6 * x;
-         case(4): return 12 * x * x;
+         case(3): return 2;
+         case(4): return 6 * x;
+         case(5): return 12 * x * x;
+         case(8): return  2 * t;
+         default: return 0;
       };
    }
 
@@ -95,11 +115,12 @@ public:
    {
       switch(N)
       {
-         case(0): return 0;
-         case(1): return 2;
-         case(2): return 0;
-         case(3): return 0;
-         case(4): return 0;
+         case(2): return x;
+         case(6): return 1;
+         //case(5): return x * x * x * x;
+         case(7): return 2*t;
+         case(8): return x * x;
+         default: return 0;
       };
    }
 };

@@ -115,7 +115,7 @@ public:
 
       q.resize(nodes_count, 0);
       q_1.resize(nodes_count, 0);
-      u.resize(nodes_count, 0);
+      u.resize(nodes_count, 1);
       //u_1.resize(nodes_count, 0);
 
       /*for(int i = 0; i < nodes_count; i++)
@@ -228,7 +228,7 @@ public:
 
             vector<double> q_elem = { u[elem_beg_i_glob], u[elem_beg_i_glob + 1], u[elem_beg_i_glob + 2] };
 
-            vector<double> lambda = { test.lambda(q_elem[0]), test.lambda(q_elem[1]), test.lambda(q_elem[2]) };
+            vector<double> lambda = { test.lambda(q_elem[0], x_elem[0], t), test.lambda(q_elem[1], x_elem[1], t), test.lambda(q_elem[2], x_elem[2], t) };
 
             // Заполнение диагонали матрицы жесткости
             G.di[to_add_i_di++] += (lambda[0] * 37 / 30 + lambda[1] * 1.2 - lambda[2] * 0.1) / h;
@@ -387,7 +387,7 @@ public:
       } while(0 < n_iter && n_iter <  max_iter);
    }
 
-   // Явная разностная схема по времени, вывод итераций в поток fout
+   // Неявная разностная схема по времени, вывод итераций в поток fout
    void ExplicitScheme(const double& eps, const double& delta, const int& max_iter, const string& file_name)
    {
       ofstream fout(file_name);
@@ -486,17 +486,20 @@ public:
 
                u = slae.b;
 
-               fout << endl << "Non-linear iteration " << n_iter << endl;
-               PrintSolution(u, t, fout);
+               //fout << endl << "Non-linear iteration " << n_iter << endl;
+               //PrintSolution(u, t, fout);
                n_iter++;
             }
          } while(0 < n_iter && n_iter < max_iter);
 
          q = u;
          q_1 = q;
-
-         fout << "Final result on timestep:" << endl;
-         PrintSolution(q, t, fout);
+         //if (time_i % 8 == 0) 
+         {
+            fout << "Number of iterations: " << n_iter << endl;
+            fout << "Final result on timestep:" << endl;
+            PrintSolution(q, t, fout);
+         }
       }
 
       fout.close();
@@ -516,31 +519,62 @@ public:
 
          for(int node_i = 0; node_i < r->nodes_count; node_i++)
          {
-            // Индекс узла в глобальной нумерации
-            int elem_beg_i = node_i + r->first_i;
+            //if (node_i % 16 == 0)
+            {
+               // Индекс узла в глобальной нумерации
+               int elem_beg_i = node_i + r->first_i;
 
-            fout << setw(11) << r->nodes[node_i];
-            double help_1 = solution[elem_beg_i];
-            fout << setw(15) << help_1;
-            double help_2 = test.u_prec(r->nodes[node_i], t);
-            fout << setw(15) << help_2;
-            fout << setw(14) << scientific << abs(help_1 - help_2) << fixed;
+               fout << setw(11) << r->nodes[node_i];
+               double help_1 = solution[elem_beg_i];
+               fout << setw(15) << help_1;
+               double help_2 = test.u_prec(r->nodes[node_i], t);
+               fout << setw(15) << help_2;
+               fout << setw(14) << scientific << abs(help_1 - help_2) << fixed;
 
-            fout << setw(4) << elem_beg_i << " ";
+               fout << setw(4) << elem_beg_i << " ";
 
 
-            if(node_i == 0 || node_i == r->nodes_count - 1)
-               fout << "  border";
-            else
-               fout << "  inner";
+               if (node_i == 0 || node_i == r->nodes_count - 1)
+                  fout << "  border";
+               else
+                  fout << "  inner";
 
-            fout << endl;
+               fout << endl;
 
-            norm_u += help_2 * help_2;
-            norm += abs(help_1 - help_2) * abs(help_1 - help_2);
+               norm_u += help_2 * help_2;
+               norm += abs(help_1 - help_2) * abs(help_1 - help_2);
+            }
          }
+         PrintSolutionInside(&regions[reg_i], solution, t, fout, norm_u, norm);
       }
       fout << "||u-u*||/||u*|| = " << scientific << sqrt(norm) / sqrt(norm_u) << endl;
       fout << "||u-u*|| = " << scientific << sqrt(norm) << endl << endl;
+   }
+
+   // Вывод решения на основе вектора текущего приближения solution
+   // во временной точке t в поток fout
+   void PrintSolutionInside(Region *r, const vector<double>& solution, const double& t, ofstream& fout, double &norm_u, double &norm)
+   {
+      // Индекс узла в глобальной нумерации
+      int i = r->first_i;
+      double h = (r->nodes[2] - r->nodes[0]);
+      double x = r->nodes[0] + h / 4;
+
+      double e = (x - r->nodes[0]) / h;
+      double fi1 = 2 * (e - 0.5) * (e - 1);
+      double fi2 = - 4 * e * (e - 1);
+      double fi3 = 2 * (e - 0.5) * e;
+      double res = fi1 * solution[i] + fi2 * solution[i + 1] + fi3 * solution[i + 2];
+
+      fout << setw(11) << x;
+      fout << setw(15) << res;
+      double help_2 = test.u_prec(x, t);
+      fout << setw(15) << help_2;
+      fout << setw(14) << scientific << abs(res - help_2) << fixed;
+      fout << setw(5) << "- ";
+      fout << "  point" << endl;
+
+      norm_u += help_2 * help_2;
+      norm += abs(res - help_2) * abs(res - help_2);
    }
 };

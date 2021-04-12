@@ -16,6 +16,4 @@ int main()
 
    // ДЛЯ НЕСТАЦИОНАРНОСТИ
    nl.ExplicitScheme(1e-14, 1e-14, 100, "result.txt");
-
-   int asd = 1111;
 }
